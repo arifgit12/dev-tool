@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.ldapmanager.ui.javafx.AdvancedTestPanelController"
+      spacing="15">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- Title -->
+    <Label text="Advanced LDAP Testing" styleClass="section-title"/>
+
+    <!-- Connection Selection -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Connection:" styleClass="label-bold"/>
+        <ComboBox fx:id="connectionComboBox" prefWidth="300"
+                  promptText="Select a connection" onAction="#handleConnectionChange"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- Operation Selection -->
+    <VBox spacing="10" styleClass="panel">
+        <Label text="Select Operation" styleClass="label-bold"/>
+        <ComboBox fx:id="operationComboBox" prefWidth="400"
+                  promptText="Choose an operation"/>
+    </VBox>
+
+    <!-- Input Fields -->
+    <GridPane hgap="10" vgap="10" styleClass="panel">
+        <Label text="Username:" GridPane.columnIndex="0" GridPane.rowIndex="0" styleClass="label-bold"/>
+        <TextField fx:id="usernameField" GridPane.columnIndex="1" GridPane.rowIndex="0"
+                   promptText="Enter username"/>
+
+        <Label text="Group Name:" GridPane.columnIndex="0" GridPane.rowIndex="1" styleClass="label-bold"/>
+        <TextField fx:id="groupNameField" GridPane.columnIndex="1" GridPane.rowIndex="1"
+                   promptText="Enter group name (comma-separated for multiple)"/>
+
+        <columnConstraints>
+            <ColumnConstraints minWidth="120" prefWidth="120"/>
+            <ColumnConstraints hgrow="ALWAYS"/>
+        </columnConstraints>
+    </GridPane>
+
+    <!-- Buttons -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Button fx:id="executeButton" text="Execute" onAction="#handleExecute" styleClass="button-success"/>
+        <Button fx:id="copyButton" text="Copy to Clipboard" onAction="#handleCopy" styleClass="button-secondary"/>
+        <Button fx:id="clearButton" text="Clear Results" onAction="#handleClear" styleClass="button-secondary"/>
+    </HBox>
+
+    <!-- Results Area -->
+    <VBox VBox.vgrow="ALWAYS" spacing="5">
+        <Label text="Results" styleClass="label-bold"/>
+        <TextArea fx:id="resultArea" VBox.vgrow="ALWAYS" editable="false" wrapText="true"
+                  styleClass="result-area" prefHeight="400"/>
+    </VBox>
+
+</VBox>

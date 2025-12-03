@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.ldapmanager.ui.javafx.EmbeddedServerPanelController"
+      spacing="15">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- Title and Status -->
+    <VBox spacing="10">
+        <Label text="Embedded LDAP Server (Test Mode)" styleClass="section-title"/>
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="Status:" styleClass="label-bold"/>
+            <Label fx:id="statusLabel" text="STOPPED" styleClass="status-disconnected"/>
+        </HBox>
+    </VBox>
+
+    <Separator/>
+
+    <!-- Configuration Panel -->
+    <VBox spacing="10" styleClass="panel">
+        <Label text="Server Configuration" styleClass="label-bold"/>
+        <GridPane hgap="10" vgap="10">
+            <Label text="Port:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <TextField fx:id="portField" GridPane.columnIndex="1" GridPane.rowIndex="0"
+                       text="10389" prefWidth="150"/>
+
+            <Label text="Base DN:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <TextField fx:id="baseDnField" GridPane.columnIndex="1" GridPane.rowIndex="1"
+                       text="dc=example,dc=com" prefWidth="250"/>
+
+            <Label text="Admin Password:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+            <PasswordField fx:id="adminPasswordField" GridPane.columnIndex="1" GridPane.rowIndex="2"
+                           text="admin123" prefWidth="150"/>
+
+            <columnConstraints>
+                <ColumnConstraints minWidth="150"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
+            </columnConstraints>
+        </GridPane>
+    </VBox>
+
+    <!-- Control Buttons -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Button fx:id="startButton" text="Start Server" onAction="#handleStart" styleClass="button-success"/>
+        <Button fx:id="stopButton" text="Stop Server" onAction="#handleStop" styleClass="button-danger" disable="true"/>
+        <Button fx:id="addSampleButton" text="Add Sample Data" onAction="#handleAddSample" styleClass="button" disable="true"/>
+        <Button fx:id="clearDataButton" text="Clear All Data" onAction="#handleClearData" styleClass="button-secondary" disable="true"/>
+        <Button fx:id="createConnectionButton" text="Create Connection Config" onAction="#handleCreateConnection" styleClass="button" disable="true"/>
+    </HBox>
+
+    <!-- Split View: Status and Sample Info -->
+    <SplitPane VBox.vgrow="ALWAYS" dividerPositions="0.5">
+        <!-- Status Area -->
+        <VBox spacing="5">
+            <padding>
+                <Insets right="10"/>
+            </padding>
+            <Label text="Server Information" styleClass="label-bold"/>
+            <TextArea fx:id="statusArea" editable="false" wrapText="true" VBox.vgrow="ALWAYS"
+                      styleClass="result-area"/>
+        </VBox>
+
+        <!-- Sample Data Info -->
+        <VBox spacing="5">
+            <padding>
+                <Insets left="10"/>
+            </padding>
+            <Label text="Sample Data Information" styleClass="label-bold"/>
+            <TextArea editable="false" wrapText="true" VBox.vgrow="ALWAYS" text="When you add sample data, the following test accounts will be created:
+
+USERS (all with password: password123):
+• jdoe (John Doe) - Software Engineer - IT Department
+• jsmith (Jane Smith) - Project Manager - Management
+• bwilson (Bob Wilson) - Database Administrator - IT Department
+• abrown (Alice Brown) - Business Analyst - Business
+• cdavis (Charlie Davis) - DevOps Engineer - IT Department
+
+GROUPS:
+• Developers: John Doe, Bob Wilson, Charlie Davis
+• Managers: Jane Smith
+• IT Department: John Doe, Bob Wilson, Charlie Davis
+• All Employees: All users
+
+You can authenticate with any of these users or search for them."/>
+        </VBox>
+    </SplitPane>
+
+    <!-- Custom LDIF Entry -->
+    <VBox spacing="10" styleClass="panel">
+        <Label text="Add Custom LDIF Entry" styleClass="label-bold"/>
+        <TextArea fx:id="customLdifArea" wrapText="true" prefHeight="150"
+                  promptText="Enter LDIF content here..."
+                  text="dn: cn=Test User,ou=users,dc=example,dc=com&#10;objectClass: top&#10;objectClass: person&#10;objectClass: organizationalPerson&#10;objectClass: inetOrgPerson&#10;cn: Test User&#10;sn: User&#10;givenName: Test&#10;uid: tuser&#10;mail: test.user@example.com&#10;userPassword: test123&#10;mobile: +1-555-9999"/>
+        <HBox spacing="10">
+            <Button fx:id="addCustomButton" text="Add Custom Entry" onAction="#handleAddCustom"
+                    styleClass="button" disable="true"/>
+            <Label text="(Server must be running)" style="-fx-text-fill: gray;"/>
+        </HBox>
+    </VBox>
+
+</VBox>

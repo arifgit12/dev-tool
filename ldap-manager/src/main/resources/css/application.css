@@ -1,0 +1,223 @@
+/* Root styles */
+.root {
+    -fx-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-size: 13px;
+    -fx-background-color: #f5f5f5;
+}
+
+/* Header styles */
+.header {
+    -fx-background-color: linear-gradient(to bottom, #2c3e50, #34495e);
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 5, 0, 0, 2);
+}
+
+.header .label {
+    -fx-text-fill: white !important;
+}
+
+.title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white !important;
+}
+
+.subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: #ecf0f1 !important;
+    -fx-padding: 5 0 0 0;
+}
+
+/* Footer styles */
+.footer {
+    -fx-background-color: #ecf0f1;
+    -fx-border-color: #bdc3c7;
+    -fx-border-width: 1 0 0 0;
+}
+
+.status-label {
+    -fx-text-fill: #2c3e50;
+}
+
+/* Tab styles */
+.tab-pane {
+    -fx-background-color: white;
+}
+
+.tab {
+    -fx-background-color: #ecf0f1;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.tab:selected {
+    -fx-background-color: white;
+}
+
+.tab-content-area {
+    -fx-background-color: white;
+    -fx-padding: 20;
+}
+
+/* Button styles */
+.button {
+    -fx-background-color: #3498db;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 8 15 8 15;
+    -fx-background-radius: 4;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #2980b9;
+}
+
+.button:pressed {
+    -fx-background-color: #21618c;
+}
+
+.button-success {
+    -fx-background-color: #27ae60;
+}
+
+.button-success:hover {
+    -fx-background-color: #229954;
+}
+
+.button-danger {
+    -fx-background-color: #e74c3c;
+}
+
+.button-danger:hover {
+    -fx-background-color: #c0392b;
+}
+
+.button-secondary {
+    -fx-background-color: #95a5a6;
+}
+
+.button-secondary:hover {
+    -fx-background-color: #7f8c8d;
+}
+
+/* TextField styles */
+.text-field, .password-field, .text-area {
+    -fx-background-color: white;
+    -fx-border-color: #bdc3c7;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+    -fx-padding: 6;
+}
+
+.text-field:focused, .password-field:focused, .text-area:focused {
+    -fx-border-color: #3498db;
+    -fx-border-width: 2;
+}
+
+/* Label styles */
+.label {
+    -fx-text-fill: #2c3e50;
+}
+
+.label-bold {
+    -fx-font-weight: bold;
+}
+
+.section-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+    -fx-padding: 0 0 10 0;
+}
+
+/* TableView styles */
+.table-view {
+    -fx-background-color: white;
+    -fx-border-color: #bdc3c7;
+    -fx-border-radius: 3;
+}
+
+.table-view .column-header {
+    -fx-background-color: #ecf0f1;
+    -fx-font-weight: bold;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #3498db;
+    -fx-text-fill: white;
+}
+
+/* ComboBox styles */
+.combo-box {
+    -fx-background-color: white;
+    -fx-border-color: #bdc3c7;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+}
+
+/* CheckBox styles */
+.check-box {
+    -fx-text-fill: #2c3e50;
+}
+
+/* Separator styles */
+.separator {
+    -fx-padding: 10 0 10 0;
+}
+
+/* Panel styles */
+.panel {
+    -fx-background-color: #f8f9fa;
+    -fx-border-color: #bdc3c7;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-padding: 15;
+}
+
+.panel .label {
+    -fx-text-fill: #2c3e50;
+}
+
+.panel .text-field,
+.panel .password-field {
+    -fx-background-color: white;
+}
+
+/* Connection status indicators */
+.status-connected {
+    -fx-text-fill: #27ae60;
+    -fx-font-weight: bold;
+}
+
+.status-disconnected {
+    -fx-text-fill: #e74c3c;
+    -fx-font-weight: bold;
+}
+
+.status-testing {
+    -fx-text-fill: #f39c12;
+    -fx-font-weight: bold;
+}
+
+/* Result area styles */
+.result-area {
+    -fx-font-family: "Consolas", "Monaco", monospace;
+    -fx-font-size: 13px;
+    -fx-control-inner-background: #2c3e50;
+    -fx-text-fill: #ecf0f1;
+    -fx-border-color: #34495e;
+    -fx-border-width: 1;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+}
+
+.result-area .content {
+    -fx-background-color: #2c3e50;
+}
+
+/* Form grid styles */
+.form-grid {
+    -fx-hgap: 10;
+    -fx-vgap: 10;
+    -fx-padding: 15;
+}

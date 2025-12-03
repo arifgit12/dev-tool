@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.ldapmanager.ui.javafx.ConnectionPanelController"
+      spacing="15">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- Title -->
+    <Label text="LDAP Connections" styleClass="section-title"/>
+
+    <!-- Table -->
+    <TableView fx:id="connectionTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="nameColumn" text="Name" prefWidth="150"/>
+            <TableColumn fx:id="hostColumn" text="Host" prefWidth="200"/>
+            <TableColumn fx:id="portColumn" text="Port" prefWidth="80"/>
+            <TableColumn fx:id="baseDnColumn" text="Base DN" prefWidth="250"/>
+            <TableColumn fx:id="sslColumn" text="SSL" prefWidth="60"/>
+        </columns>
+    </TableView>
+
+    <!-- Buttons -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Button fx:id="addButton" text="Add" onAction="#handleAdd" styleClass="button"/>
+        <Button fx:id="editButton" text="Edit" onAction="#handleEdit" styleClass="button"/>
+        <Button fx:id="deleteButton" text="Delete" onAction="#handleDelete" styleClass="button-danger"/>
+        <Button fx:id="testButton" text="Test Connection" onAction="#handleTest" styleClass="button-success"/>
+    </HBox>
+
+</VBox>

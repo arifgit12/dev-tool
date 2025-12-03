@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.ldapmanager.ui.javafx.UserSearchPanelController"
+      spacing="15">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- Title -->
+    <Label text="User Search &amp; Authentication" styleClass="section-title"/>
+
+    <!-- Connection Selection -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Connection:" styleClass="label-bold"/>
+        <ComboBox fx:id="connectionComboBox" prefWidth="300"
+                  promptText="Select a connection" onAction="#handleConnectionChange"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- Search and Authentication in Two Columns -->
+    <GridPane hgap="15" vgap="10">
+        <!-- Search Panel - Left Column -->
+        <VBox spacing="10" styleClass="panel" GridPane.columnIndex="0" GridPane.rowIndex="0"
+              GridPane.hgrow="ALWAYS" prefHeight="120" minHeight="120">
+            <Label text="Search Users" styleClass="label-bold"/>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <TextField fx:id="searchField" HBox.hgrow="ALWAYS"
+                           promptText="Enter username or search term"
+                           onAction="#handleSearch"/>
+                <Button fx:id="searchButton" text="Search" onAction="#handleSearch" styleClass="button"/>
+                <Button fx:id="clearButton" text="Clear" onAction="#handleClear" styleClass="button-secondary"/>
+            </HBox>
+        </VBox>
+
+        <!-- Authentication Panel - Right Column -->
+        <VBox spacing="10" styleClass="panel" GridPane.columnIndex="1" GridPane.rowIndex="0"
+              GridPane.hgrow="ALWAYS" prefHeight="120" minHeight="120">
+            <Label text="User Authentication" styleClass="label-bold"/>
+            <GridPane hgap="10" vgap="10">
+                <Label text="Username:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                <TextField fx:id="usernameField" GridPane.columnIndex="1" GridPane.rowIndex="0"
+                           GridPane.hgrow="ALWAYS" promptText="Enter username"/>
+
+                <Label text="Password:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                <PasswordField fx:id="passwordField" GridPane.columnIndex="1" GridPane.rowIndex="1"
+                               GridPane.hgrow="ALWAYS" promptText="Enter password" onAction="#handleAuthenticate"/>
+
+                <Button fx:id="authenticateButton" text="Authenticate" onAction="#handleAuthenticate"
+                        GridPane.columnIndex="2" GridPane.rowIndex="0" GridPane.rowSpan="2"
+                        styleClass="button-success"/>
+
+                <columnConstraints>
+                    <ColumnConstraints minWidth="80"/>
+                    <ColumnConstraints hgrow="ALWAYS"/>
+                    <ColumnConstraints/>
+                </columnConstraints>
+            </GridPane>
+        </VBox>
+
+        <columnConstraints>
+            <ColumnConstraints percentWidth="50"/>
+            <ColumnConstraints percentWidth="50"/>
+        </columnConstraints>
+    </GridPane>
+
+    <!-- Results Table -->
+    <VBox spacing="5" prefHeight="250" maxHeight="300">
+        <Label text="Search Results" styleClass="label-bold"/>
+        <TableView fx:id="resultsTable" VBox.vgrow="ALWAYS" prefHeight="220">
+            <columns>
+                <TableColumn fx:id="usernameColumn" text="Username" prefWidth="150"/>
+                <TableColumn fx:id="fullNameColumn" text="Full Name" prefWidth="200"/>
+                <TableColumn fx:id="emailColumn" text="Email" prefWidth="200"/>
+                <TableColumn fx:id="departmentColumn" text="Department" prefWidth="150"/>
+                <TableColumn fx:id="enabledColumn" text="Enabled" prefWidth="80"/>
+            </columns>
+        </TableView>
+    </VBox>
+
+    <!-- User Details Section -->
+    <VBox fx:id="userDetailsSection" spacing="10" styleClass="panel" visible="false" managed="false"
+          VBox.vgrow="ALWAYS" minHeight="200" prefHeight="300">
+        <Label text="Selected User Details" styleClass="label-bold"/>
+        <TextArea fx:id="userDetailsArea" editable="false" wrapText="true"
+                  VBox.vgrow="ALWAYS" prefHeight="250"
+                  styleClass="result-area"/>
+        <HBox spacing="10">
+            <Button text="Export to Excel" onAction="#handleExport" styleClass="button"/>
+            <Button text="Copy Details" onAction="#handleCopyDetails" styleClass="button-secondary"/>
+        </HBox>
+    </VBox>
+
+</VBox>

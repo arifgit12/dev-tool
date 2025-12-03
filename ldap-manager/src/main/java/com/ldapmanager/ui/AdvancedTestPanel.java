@@ -79,10 +79,35 @@ public class AdvancedTestPanel extends JPanel {
         // Buttons
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         executeButton = new JButton("Execute");
+        JButton copyButton = new JButton("Copy to Clipboard");
         clearButton = new JButton("Clear Results");
+
         executeButton.addActionListener(e -> executeOperation());
+
+        copyButton.addActionListener(e -> {
+            String text = resultArea.getText();
+            if (text != null && !text.isEmpty()) {
+                java.awt.datatransfer.StringSelection selection =
+                    new java.awt.datatransfer.StringSelection(text);
+                java.awt.Toolkit.getDefaultToolkit()
+                    .getSystemClipboard()
+                    .setContents(selection, selection);
+                JOptionPane.showMessageDialog(this,
+                    "Results copied to clipboard!",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this,
+                    "No results to copy",
+                    "Info",
+                    JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+
         clearButton.addActionListener(e -> resultArea.setText(""));
+
         buttonPanel.add(executeButton);
+        buttonPanel.add(copyButton);
         buttonPanel.add(clearButton);
 
         // Results area
@@ -239,6 +264,10 @@ public class AdvancedTestPanel extends JPanel {
         env.put(Context.SECURITY_PRINCIPAL, username);
         env.put(Context.SECURITY_CREDENTIALS, password);
 
+        // Handle LDAP referrals - ignore them to prevent "Unprocessed Continuation Reference" errors
+        // This is common in Active Directory environments with multiple domain controllers
+        env.put(Context.REFERRAL, "ignore");
+
         return new InitialLdapContext(env, null);
     }
 
@@ -260,12 +289,47 @@ public class AdvancedTestPanel extends JPanel {
             return "Error: Username and password are required";
         }
 
-        boolean authenticated = ldapService.authenticateUser(currentConnection, username, password);
-
         StringBuilder result = new StringBuilder();
         result.append("=== Authentication Test ===\n\n");
         result.append("Username: ").append(username).append("\n");
-        result.append("Result: ").append(authenticated ? "SUCCESS ✓" : "FAILED ✗").append("\n");
+        result.append("Connection: ").append(currentConnection.getHost()).append(":").append(currentConnection.getPort()).append("\n");
+        result.append("Base DN: ").append(currentConnection.getBaseDn()).append("\n\n");
+
+        try {
+            boolean authenticated = ldapService.authenticateUser(currentConnection, username, password);
+
+            if (authenticated) {
+                result.append("Result: SUCCESS ✓\n\n");
+                result.append("User authenticated successfully.");
+            } else {
+                result.append("Result: FAILED ✗\n\n");
+                result.append("Authentication failed - invalid username or password.\n");
+                result.append("Please verify:\n");
+                result.append("  - Username is correct\n");
+                result.append("  - Password is correct\n");
+                result.append("  - User exists in the directory\n");
+                result.append("  - User account is not locked or disabled\n");
+            }
+        } catch (Exception e) {
+            result.append("Result: ERROR ✗\n\n");
+            result.append("Error Type: ").append(e.getClass().getSimpleName()).append("\n");
+            result.append("Error Message: ").append(e.getMessage()).append("\n\n");
+
+            // Add detailed stack trace
+            result.append("Detailed Error Log:\n");
+            result.append("==================\n");
+            java.io.StringWriter sw = new java.io.StringWriter();
+            java.io.PrintWriter pw = new java.io.PrintWriter(sw);
+            e.printStackTrace(pw);
+            result.append(sw.toString());
+
+            // Log to console as well
+            System.err.println("=== Authentication Failed ===");
+            System.err.println("Username: " + username);
+            System.err.println("Connection: " + currentConnection.getHost() + ":" + currentConnection.getPort());
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
 
         return result.toString();
     }
@@ -277,40 +341,101 @@ public class AdvancedTestPanel extends JPanel {
             return "Error: Username is required";
         }
 
-        LdapContext ctx = createLdapContext(currentConnection.getUserDn(), currentConnection.getPassword());
-
-        SearchControls searchCtls = new SearchControls();
-        searchCtls.setSearchScope(SearchControls.SUBTREE_SCOPE);
-
-        String filter = "(sAMAccountName=" + username + ")";
-        String searchFilter = "(&(objectcategory=user)(|" + filter + "))";
-        String searchBase = currentConnection.getBaseDn();
-
-        NamingEnumeration<?> enums = ctx.search(searchBase, searchFilter, searchCtls);
-
         StringBuilder result = new StringBuilder();
         result.append("=== User Details ===\n\n");
+        result.append("Username: ").append(username).append("\n");
+        result.append("Connection: ").append(currentConnection.getHost()).append(":").append(currentConnection.getPort()).append("\n");
+        result.append("Base DN: ").append(currentConnection.getBaseDn()).append("\n\n");
 
-        if (!enums.hasMore()) {
-            result.append("User not found: ").append(username);
-        } else {
-            while (enums.hasMore()) {
-                SearchResult sr = (SearchResult) enums.next();
-                Attributes allAttrs = sr.getAttributes();
+        LdapContext ctx = null;
+        try {
+            ctx = createLdapContext(currentConnection.getUserDn(), currentConnection.getPassword());
 
-                for (NamingEnumeration<?> ne = allAttrs.getAll(); ne.hasMoreElements();) {
-                    Attribute natt = (Attribute) ne.next();
-                    String attrName = natt.getID();
+            SearchControls searchCtls = new SearchControls();
+            searchCtls.setSearchScope(SearchControls.SUBTREE_SCOPE);
 
-                    for (Enumeration<?> vals = natt.getAll(); vals.hasMoreElements();) {
-                        Object value = vals.nextElement();
-                        result.append(String.format("%-30s: %s\n", attrName, value));
+            String filter = "(sAMAccountName=" + username + ")";
+            String searchFilter = "(&(objectcategory=user)(|" + filter + "))";
+            String searchBase = currentConnection.getBaseDn();
+
+            NamingEnumeration<?> enums = ctx.search(searchBase, searchFilter, searchCtls);
+
+            if (!enums.hasMore()) {
+                result.append("User not found: ").append(username).append("\n\n");
+                result.append("Please verify:\n");
+                result.append("  - Username is correct\n");
+                result.append("  - User exists in the directory\n");
+                result.append("  - Search base DN is correct\n");
+            } else {
+                result.append("User found! Details:\n");
+                result.append("==================\n\n");
+
+                try {
+                    while (enums.hasMore()) {
+                        SearchResult sr = (SearchResult) enums.next();
+                        Attributes allAttrs = sr.getAttributes();
+
+                        for (NamingEnumeration<?> ne = allAttrs.getAll(); ne.hasMoreElements();) {
+                            Attribute natt = (Attribute) ne.next();
+                            String attrName = natt.getID();
+
+                            for (Enumeration<?> vals = natt.getAll(); vals.hasMoreElements();) {
+                                Object value = vals.nextElement();
+                                result.append(String.format("%-30s: %s\n", attrName, value));
+                            }
+                        }
                     }
+                } catch (javax.naming.PartialResultException e) {
+                    // This occurs when the server returns referrals to other LDAP servers
+                    // We've already retrieved some results, so just note this and continue
+                    result.append("\n");
+                    result.append("Note: Some attributes may be incomplete due to LDAP referrals.\n");
+                    result.append("The displayed results are from the primary server.\n");
+                    result.append("Additional data may exist on other domain controllers.\n");
+
+                    // Log to console for debugging
+                    System.out.println("PartialResultException encountered (expected in multi-DC environments)");
+                    System.out.println("Displayed partial results successfully");
+                }
+            }
+        } catch (javax.naming.PartialResultException e) {
+            // Handle referral exception at the top level (if it occurs before getting any results)
+            result.append("Result: PARTIAL SUCCESS ⚠\n\n");
+            result.append("The operation partially completed but encountered LDAP referrals.\n");
+            result.append("This is normal in Active Directory environments with multiple domain controllers.\n\n");
+            result.append("Note: The LDAP server returned referrals to other servers, ");
+            result.append("but some results may have been retrieved before the referral was encountered.\n");
+
+            System.err.println("PartialResultException at top level: " + e.getMessage());
+        } catch (Exception e) {
+            result.append("Result: ERROR ✗\n\n");
+            result.append("Error Type: ").append(e.getClass().getSimpleName()).append("\n");
+            result.append("Error Message: ").append(e.getMessage()).append("\n\n");
+
+            // Add detailed stack trace
+            result.append("Detailed Error Log:\n");
+            result.append("==================\n");
+            java.io.StringWriter sw = new java.io.StringWriter();
+            java.io.PrintWriter pw = new java.io.PrintWriter(sw);
+            e.printStackTrace(pw);
+            result.append(sw.toString());
+
+            // Log to console as well
+            System.err.println("=== Retrieve User Details Failed ===");
+            System.err.println("Username: " + username);
+            System.err.println("Connection: " + currentConnection.getHost() + ":" + currentConnection.getPort());
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            if (ctx != null) {
+                try {
+                    ctx.close();
+                } catch (Exception e) {
+                    System.err.println("Error closing LDAP context: " + e.getMessage());
                 }
             }
         }
 
-        ctx.close();
         return result.toString();
     }
 

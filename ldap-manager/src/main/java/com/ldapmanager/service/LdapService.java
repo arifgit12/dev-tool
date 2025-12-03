@@ -26,27 +26,57 @@ public class LdapService {
         try (LDAPConnection ldapConnection = new LDAPConnection()) {
             ldapConnection.connect(connection.getHost(), connection.getPort());
 
-            String userDN = findUserDN(ldapConnection, connection, username);
-            if (userDN == null) {
+            // First, bind with admin credentials to search for the user
+            logger.debug("Binding with admin credentials to search for user: {}", username);
+            BindResult adminBindResult = ldapConnection.bind(connection.getUserDn(), connection.getPassword());
+            if (adminBindResult.getResultCode() != ResultCode.SUCCESS) {
+                logger.error("Failed to bind with admin credentials");
                 return false;
             }
 
+            // Search for the user to get their DN
+            String userDN = findUserDN(ldapConnection, connection, username);
+            if (userDN == null) {
+                logger.debug("User not found: {}", username);
+                return false;
+            }
+
+            logger.debug("Found user DN: {}", userDN);
+
+            // Now authenticate as the user
             BindResult bindResult = ldapConnection.bind(userDN, password);
-            return bindResult.getResultCode() == ResultCode.SUCCESS;
+            boolean authenticated = bindResult.getResultCode() == ResultCode.SUCCESS;
+            logger.debug("User authentication result: {}", authenticated);
+            return authenticated;
         } catch (Exception e) {
+            logger.error("Authentication error: {}", e.getMessage(), e);
             return false;
         }
     }
 
     public LdapUser findUser(LdapConnection connection, String username) throws LDAPException {
         try (LDAPConnection ldapConnection = createConnection(connection)) {
-            String searchBase = connection.getUserSearchBase() != null ?
+            String searchBase = connection.getUserSearchBase() != null && !connection.getUserSearchBase().isEmpty() ?
                 connection.getUserSearchBase() : connection.getBaseDn();
+
+            logger.info("=== Finding User ===");
+            logger.info("Username: {}", username);
+            logger.info("Search Base: {}", searchBase);
+            logger.info("User Search Base (from config): '{}'", connection.getUserSearchBase());
+            logger.info("Base DN (from config): '{}'", connection.getBaseDn());
+
+            if (searchBase == null || searchBase.isEmpty()) {
+                String error = "Search base is NULL or EMPTY! Check your connection configuration.";
+                logger.error(error);
+                throw new LDAPException(ResultCode.PARAM_ERROR, error);
+            }
 
             String filter = connection.getUserSearchFilter() != null ?
                 connection.getUserSearchFilter().replace("{0}", username) :
                 String.format("(|(uid=%s)(cn=%s)(sAMAccountName=%s)(mail=%s))",
                     username, username, username, username);
+
+            logger.info("Search Filter: {}", filter);
 
             SearchResult searchResult = ldapConnection.search(
                 searchBase,
@@ -54,11 +84,22 @@ public class LdapService {
                 filter
             );
 
+            logger.info("Search completed. Entries found: {}", searchResult.getEntryCount());
+
             if (searchResult.getEntryCount() > 0) {
                 SearchResultEntry entry = searchResult.getSearchEntries().get(0);
+                logger.info("User found: {}", entry.getDN());
                 return mapToLdapUser(entry, connection, ldapConnection);
             }
+
+            logger.warn("User not found: {}", username);
             return null;
+        } catch (LDAPException e) {
+            logger.error("=== LDAP EXCEPTION in findUser ===");
+            logger.error("Error Code: {}", e.getResultCode());
+            logger.error("Error Message: {}", e.getMessage());
+            logger.error("Diagnostic Message: {}", e.getDiagnosticMessage());
+            throw e;
         }
     }
 
@@ -192,23 +233,57 @@ public class LdapService {
     }
 
     private String findUserDN(LDAPConnection ldapConnection, LdapConnection connection, String username) throws LDAPException {
-        String searchBase = connection.getUserSearchBase() != null ?
+        String searchBase = connection.getUserSearchBase() != null && !connection.getUserSearchBase().isEmpty() ?
             connection.getUserSearchBase() : connection.getBaseDn();
 
-        String filter = connection.getUserSearchFilter() != null ?
-            connection.getUserSearchFilter().replace("{0}", username) :
-            String.format("(|(uid=%s)(sAMAccountName=%s)(cn=%s))", username, username, username);
+        logger.info("=== Searching for user DN ===");
+        logger.info("Username: {}", username);
+        logger.info("Search Base: {}", searchBase);
+        logger.info("User Search Base (from config): {}", connection.getUserSearchBase());
+        logger.info("Base DN (from config): {}", connection.getBaseDn());
 
-        SearchResult searchResult = ldapConnection.search(
-            searchBase,
-            SearchScope.SUB,
-            filter
-        );
+        try {
+            String filter = connection.getUserSearchFilter() != null ?
+                    connection.getUserSearchFilter().replace("{0}", username) :
+                    String.format("(|(uid=%s)(sAMAccountName=%s)(cn=%s))", username, username, username);
 
-        if (searchResult.getEntryCount() > 0) {
-            return searchResult.getSearchEntries().get(0).getDN();
+            logger.info("Search Filter: {}", filter);
+
+            SearchResult searchResult = ldapConnection.search(
+                    searchBase,
+                    SearchScope.SUB,
+                    filter
+            );
+
+            logger.info("Search completed. Entries found: {}", searchResult.getEntryCount());
+
+            if (searchResult.getEntryCount() > 0) {
+                String userDN = searchResult.getSearchEntries().get(0).getDN();
+                logger.info("User DN found: {}", userDN);
+                return userDN;
+            } else {
+                logger.warn("=== USER NOT FOUND ===");
+                logger.warn("No entries found for username: {}", username);
+                logger.warn("Search Base: {}", searchBase);
+                logger.warn("Filter: {}", filter);
+                logger.warn("Possible reasons:");
+                logger.warn("  1. Username is incorrect");
+                logger.warn("  2. User doesn't exist in the directory");
+                logger.warn("  3. Search base DN is wrong");
+                logger.warn("  4. User is in a different OU not covered by search base");
+                logger.warn("  5. LDAP filter doesn't match the user's attributes");
+            }
+            return null;
+        } catch (Exception e) {
+            logger.error("=== EXCEPTION DURING USER SEARCH ===");
+            logger.error("Error Type: {}", e.getClass().getName());
+            logger.error("Error Message: {}", e.getMessage());
+            logger.error("Username: {}", username);
+            logger.error("Search Base: {}", searchBase);
+            logger.error("Full Stack Trace:", e);
+            throw e;
         }
-        return null;
+
     }
 
     private LdapUser mapToLdapUser(SearchResultEntry entry, LdapConnection connection, LDAPConnection ldapConnection) {

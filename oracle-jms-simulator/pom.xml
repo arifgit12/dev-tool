@@ -94,15 +94,6 @@
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
-
-        <!-- WebLogic Thin Client (from lib folder) -->
-        <dependency>
-            <groupId>com.oracle.weblogic</groupId>
-            <artifactId>wlthint3client</artifactId>
-            <version>1.0</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/wlthint3client.jar</systemPath>
-        </dependency>
     </dependencies>
 
     <build>
@@ -112,12 +103,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>com.oraclejms.OracleJmsSimulatorApplication</mainClass>
-                    <includeSystemScope>true</includeSystemScope>
                     <requiresUnpack>
-                        <dependency>
-                            <groupId>com.oracle.weblogic</groupId>
-                            <artifactId>wlthint3client</artifactId>
-                        </dependency>
                         <dependency>
                             <groupId>org.openjfx</groupId>
                             <artifactId>javafx-controls</artifactId>

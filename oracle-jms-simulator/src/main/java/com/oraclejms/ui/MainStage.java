@@ -36,6 +36,7 @@ public class MainStage {
     private TextArea receivedMessagesArea;
     private Label statusLabel;
     private Label validationLabel;
+    private Label templateLabel;
     private ComboBox<String> sendQueueCombo;
     private ComboBox<String> receiveQueueCombo;
     private Button connectButton;
@@ -43,6 +44,7 @@ public class MainStage {
     private Button receiveButton;
     private Button clearHistoryButton;
     private ListView<String> historyListView;
+    private Spinner<Integer> messageCountSpinner;
     
     // Editable connection fields
     private TextField providerUrlField;
@@ -298,13 +300,27 @@ public class MainStage {
         HBox.setHgrow(sendQueueCombo, Priority.ALWAYS);
         sendQueueCombo.setStyle("-fx-background-color: #3e3e3e; -fx-text-fill: #e0e0e0;");
         queueBox.getChildren().addAll(queueLabel, sendQueueCombo);
+        
+        // Message count spinner
+        HBox countBox = new HBox(10);
+        countBox.setAlignment(Pos.CENTER_LEFT);
+        Label countLabel = new Label("Message Count:");
+        countLabel.setTextFill(Color.web("#b0b0b0"));
+        messageCountSpinner = new Spinner<>(1, 20000, 1);
+        messageCountSpinner.setEditable(true);
+        messageCountSpinner.setPrefWidth(100);
+        messageCountSpinner.setStyle("-fx-background-color: #3e3e3e;");
+        Label countHelpLabel = new Label("(1-20000 messages)");
+        countHelpLabel.setTextFill(Color.web("#757575"));
+        countHelpLabel.setFont(Font.font("System", 10));
+        countBox.getChildren().addAll(countLabel, messageCountSpinner, countHelpLabel);
 
         Label xmlLabel = new Label("XML Message Content:");
         xmlLabel.setTextFill(Color.web("#b0b0b0"));
 
         xmlInputArea = new TextArea();
-        xmlInputArea.setPromptText("Enter XML content here...\n\nExample:\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<message>\n  <text>Hello Oracle JMS</text>\n</message>");
-        xmlInputArea.setPrefRowCount(15);
+        xmlInputArea.setPromptText("Enter XML content here...\n\nExample:\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<message>\n  <text>Hello Oracle JMS</text>\n</message>\n\nUse ${PLACEHOLDER} for dynamic values:\n${ID}, ${UUID}, ${NAME}, ${EMAIL}, ${DATE}, etc.");
+        xmlInputArea.setPrefRowCount(12);
         xmlInputArea.setWrapText(true);
         xmlInputArea.setStyle("-fx-control-inner-background: #1e1e1e; -fx-text-fill: #e0e0e0; " +
                               "-fx-font-family: 'Courier New'; -fx-font-size: 12px;");
@@ -312,12 +328,18 @@ public class MainStage {
 
         validationLabel = new Label("");
         validationLabel.setFont(Font.font("System", 11));
+        
+        // Template indicator label
+        templateLabel = new Label("");
+        templateLabel.setFont(Font.font("System", 11));
+        templateLabel.setTextFill(Color.web("#FF9800"));
+        templateLabel.setVisible(false);
 
         HBox buttonBox = new HBox(10);
         buttonBox.setAlignment(Pos.CENTER_LEFT);
         
         beautifyButton = createStyledButton("Beautify XML", "#2196F3");
-        sendButton = createStyledButton("Send Message", "#4CAF50");
+        sendButton = createStyledButton("Send Message(s)", "#4CAF50");
         Button clearButton = createStyledButton("Clear", "#757575");
         
         beautifyButton.setOnAction(e -> beautifyXml());
@@ -331,7 +353,7 @@ public class MainStage {
         historyLabel.setTextFill(Color.web("#b0b0b0"));
         
         historyListView = new ListView<>();
-        historyListView.setPrefHeight(150);
+        historyListView.setPrefHeight(120);
         historyListView.setStyle("-fx-control-inner-background: #1e1e1e; -fx-text-fill: #e0e0e0;");
         
         clearHistoryButton = createStyledButton("Clear History", "#757575");
@@ -339,7 +361,7 @@ public class MainStage {
 
         VBox.setVgrow(xmlInputArea, Priority.ALWAYS);
         panel.getChildren().addAll(
-            titleLabel, queueBox, xmlLabel, xmlInputArea, validationLabel,
+            titleLabel, queueBox, countBox, xmlLabel, xmlInputArea, validationLabel, templateLabel,
             buttonBox, historyLabel, historyListView, clearHistoryButton
         );
         
@@ -429,8 +451,18 @@ public class MainStage {
         if (xml == null || xml.trim().isEmpty()) {
             validationLabel.setText("");
             validationLabel.setTextFill(Color.web("#b0b0b0"));
+            templateLabel.setVisible(false);
             sendButton.setDisable(true);
             return;
+        }
+        
+        // Check for template variables
+        boolean hasTemplates = com.oraclejms.util.TemplateUtil.hasTemplateVariables(xml);
+        if (hasTemplates) {
+            templateLabel.setText("ℹ Dynamic parameters detected - each message will have unique values");
+            templateLabel.setVisible(true);
+        } else {
+            templateLabel.setVisible(false);
         }
 
         boolean isValid = XmlUtil.isValidXml(xml);
@@ -487,25 +519,67 @@ public class MainStage {
     private void sendMessage() {
         String xml = xmlInputArea.getText();
         String queue = sendQueueCombo.getValue();
+        int messageCount = messageCountSpinner.getValue();
 
         if (!XmlUtil.isValidXml(xml)) {
             showAlert("Error", "Invalid XML content", Alert.AlertType.ERROR);
             return;
         }
-
-        new Thread(() -> {
-            try {
-                jmsService.sendMessage(queue, xml);
-                Platform.runLater(() -> {
-                    showStatus("Message sent successfully to " + queue, "#4CAF50");
-                    updateHistoryList();
-                });
-            } catch (JMSException e) {
-                log.error("Failed to send message", e);
-                Platform.runLater(() -> 
-                    showAlert("Send Error", "Failed to send message: " + e.getMessage(), Alert.AlertType.ERROR));
-            }
-        }).start();
+        
+        if (messageCount < 1 || messageCount > 20000) {
+            showAlert("Error", "Message count must be between 1 and 20000", Alert.AlertType.ERROR);
+            return;
+        }
+        
+        // Disable send button during sending
+        sendButton.setDisable(true);
+        
+        if (messageCount == 1) {
+            // Single message - use original method
+            new Thread(() -> {
+                try {
+                    String processedXml = com.oraclejms.util.TemplateUtil.processTemplate(xml);
+                    jmsService.sendMessage(queue, processedXml);
+                    Platform.runLater(() -> {
+                        showStatus("Message sent successfully to " + queue, "#4CAF50");
+                        updateHistoryList();
+                        sendButton.setDisable(!jmsService.isConnected());
+                    });
+                } catch (JMSException e) {
+                    log.error("Failed to send message", e);
+                    Platform.runLater(() -> {
+                        showAlert("Send Error", "Failed to send message: " + e.getMessage(), Alert.AlertType.ERROR);
+                        sendButton.setDisable(!jmsService.isConnected());
+                    });
+                }
+            }).start();
+        } else {
+            // Multiple messages - use batch method with progress
+            showStatus("Sending " + messageCount + " messages to " + queue + "...", "#FF9800");
+            
+            new Thread(() -> {
+                try {
+                    jmsService.sendMessagesAsync(queue, xml, messageCount, (sent, total) -> {
+                        Platform.runLater(() -> {
+                            showStatus(String.format("Sending messages: %d/%d (%.1f%%)", 
+                                sent, total, (sent * 100.0 / total)), "#FF9800");
+                        });
+                    });
+                    
+                    Platform.runLater(() -> {
+                        showStatus("Successfully sent " + messageCount + " message(s) to " + queue, "#4CAF50");
+                        updateHistoryList();
+                        sendButton.setDisable(!jmsService.isConnected());
+                    });
+                } catch (JMSException e) {
+                    log.error("Failed to send messages", e);
+                    Platform.runLater(() -> {
+                        showAlert("Send Error", "Failed to send messages: " + e.getMessage(), Alert.AlertType.ERROR);
+                        sendButton.setDisable(!jmsService.isConnected());
+                    });
+                }
+            }).start();
+        }
     }
 
     private void receiveMessages() {

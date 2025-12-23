@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -311,6 +312,103 @@ public class OracleJmsService {
 
     public void clearHistory() {
         messageHistory.clear();
+    }
+    
+    /**
+     * Sends multiple messages with template processing in parallel using threading
+     * @param queueName Target queue name
+     * @param xmlTemplate XML template with placeholders
+     * @param messageCount Number of messages to send (1-20000)
+     * @param progressCallback Callback for progress updates (sent count, total count)
+     * @throws JMSException if sending fails
+     */
+    public void sendMessagesAsync(String queueName, String xmlTemplate, int messageCount, 
+                                   java.util.function.BiConsumer<Integer, Integer> progressCallback) throws JMSException {
+        if (!connected) {
+            throw new JMSException("Not connected to Oracle JMS");
+        }
+        
+        if (messageCount < 1 || messageCount > 20000) {
+            throw new JMSException("Message count must be between 1 and 20000");
+        }
+        
+        // Use thread pool for parallel sending
+        int threadCount = Math.min(10, Math.max(1, messageCount / 100)); // 1-10 threads based on load
+        java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(threadCount);
+        java.util.concurrent.atomic.AtomicInteger sentCount = new java.util.concurrent.atomic.AtomicInteger(0);
+        java.util.concurrent.atomic.AtomicInteger errorCount = new java.util.concurrent.atomic.AtomicInteger(0);
+        
+        try {
+            InitialContext ctx = createJndiContext();
+            Queue queue = (Queue) ctx.lookup(queueName);
+            
+            for (int i = 0; i < messageCount; i++) {
+                final int messageNum = i + 1;
+                executor.submit(() -> {
+                    try {
+                        // Process template for this message
+                        String processedXml = com.oraclejms.util.TemplateUtil.processTemplate(xmlTemplate);
+                        
+                        // Create producer for this thread
+                        MessageProducer producer = session.createProducer(queue);
+                        TextMessage message = session.createTextMessage(processedXml);
+                        producer.send(message);
+                        producer.close();
+                        
+                        int sent = sentCount.incrementAndGet();
+                        
+                        // Update progress every 10 messages or on last message
+                        if (sent % 10 == 0 || sent == messageCount) {
+                            if (progressCallback != null) {
+                                progressCallback.accept(sent, messageCount);
+                            }
+                        }
+                        
+                        log.debug("Sent message {}/{} to queue: {}", sent, messageCount, queueName);
+                    } catch (Exception e) {
+                        errorCount.incrementAndGet();
+                        log.error("Failed to send message {}/{}", messageNum, messageCount, e);
+                    }
+                });
+            }
+            
+            ctx.close();
+            
+            // Wait for all messages to complete
+            executor.shutdown();
+            if (!executor.awaitTermination(300, java.util.concurrent.TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+                throw new JMSException("Timeout waiting for messages to send");
+            }
+            
+            int sent = sentCount.get();
+            int errors = errorCount.get();
+            
+            // Add summary to history
+            if (sent > 0) {
+                JmsMessage summaryMessage = new JmsMessage(
+                    "BATCH-" + UUID.randomUUID().toString().substring(0, 8),
+                    queueName,
+                    String.format("Sent %d messages (%d errors)", sent, errors),
+                    LocalDateTime.now(),
+                    JmsMessage.MessageType.SENT
+                );
+                messageHistory.add(summaryMessage);
+            }
+            
+            log.info("Batch send completed: {} messages sent, {} errors", sent, errors);
+            
+            if (errors > 0) {
+                throw new JMSException(String.format("Sent %d messages with %d errors", sent, errors));
+            }
+            
+        } catch (NamingException e) {
+            log.error("Failed to send messages", e);
+            throw new JMSException("Failed to send messages: " + e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new JMSException("Message sending interrupted: " + e.getMessage());
+        }
     }
 
     private void verifyWebLogicClasses() {

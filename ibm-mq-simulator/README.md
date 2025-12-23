@@ -5,7 +5,11 @@ A professional IBM MQ Simulator built with Spring Boot and JavaFX for testing an
 ## Features
 
 - **Professional JavaFX UI** with dark theme
+- **Two-Tab Interface**:
+  - **Configured Connection**: Uses application.properties settings
+  - **Dynamic Configuration**: User-provided connection details with testing
 - **IBM MQ Connection Management** - Connect to IBM MQ queue managers
+- **Connection Testing** - Validate credentials before establishing connection (Dynamic tab)
 - **XML Message Handling**:
   - Auto-beautification of XML content
   - Real-time XML validation
@@ -68,6 +72,10 @@ java -jar target/ibm-mq-simulator-1.0.0.jar
 
 ## Usage
 
+The application features two tabs for different use cases:
+
+### Tab 1: Configured Connection (from application.properties)
+
 1. **Connect to IBM MQ**
    - Verify connection details in the top panel
    - Click the "Connect" button to establish connection
@@ -88,6 +96,34 @@ java -jar target/ibm-mq-simulator-1.0.0.jar
    - Select the queue to receive from
    - Click "Receive Messages" to pull messages from the queue
    - Messages will be displayed in the right panel with timestamps
+
+### Tab 2: Dynamic Configuration (user-provided settings)
+
+Perfect for testing different MQ environments without editing configuration files!
+
+1. **Configure Connection**
+   - Enter Queue Manager name (e.g., QM1)
+   - Enter Channel name (e.g., DEV.APP.SVRCONN)
+   - Enter Connection string (e.g., localhost(1414))
+   - Enter Username and Password
+   - Click "Test Connection" to validate settings before connecting
+
+2. **Connect to IBM MQ**
+   - After testing, click "Connect" to establish the connection
+   - Status indicator shows connection state
+
+3. **Send Messages**
+   - Enter queue name (e.g., DEV.QUEUE.1)
+   - Enter XML content (supports template parameters)
+   - Click "Beautify XML" to format
+   - Click "Send Message" to send to the specified queue
+   - Result displays success/failure status
+
+4. **Receive Messages**
+   - Enter queue name to receive from
+   - Click "Receive Messages" to pull up to 10 messages
+   - Messages display with timestamps and message IDs
+   - Click "Clear" to reset the display
 
 4. **Message History**
    - View all sent and received messages in the history list

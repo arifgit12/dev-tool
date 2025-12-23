@@ -117,7 +117,11 @@ public class MainStage {
             scene.getStylesheets().add(styleResource.toExternalForm());
         }
         
+        // Make window resizable and set minimum size
+        primaryStage.setMinWidth(1000);
+        primaryStage.setMinHeight(700);
         primaryStage.setScene(scene);
+        primaryStage.setTitle("IBM MQ Simulator");
         primaryStage.show();
 
         updateConnectionState(false);
@@ -201,7 +205,8 @@ public class MainStage {
         sendQueueCombo = new ComboBox<>();
         sendQueueCombo.getItems().addAll(mqConfig.getQueue().getIn(), mqConfig.getQueue().getOut());
         sendQueueCombo.setValue(mqConfig.getQueue().getOut());
-        sendQueueCombo.setPrefWidth(200);
+        sendQueueCombo.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(sendQueueCombo, Priority.ALWAYS);
         sendQueueCombo.setStyle("-fx-background-color: #3e3e3e; -fx-text-fill: #e0e0e0;");
         queueBox.getChildren().addAll(queueLabel, sendQueueCombo);
 
@@ -213,14 +218,16 @@ public class MainStage {
         countLabel.setTextFill(Color.web("#b0b0b0"));
         messageCountSpinner = new Spinner<>(1, 20000, 1);
         messageCountSpinner.setEditable(true);
-        messageCountSpinner.setPrefWidth(100);
+        messageCountSpinner.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(messageCountSpinner, Priority.SOMETIMES);
         messageCountSpinner.setStyle("-fx-background-color: #3e3e3e;");
         
         Label threadLabel = new Label("Threads:");
         threadLabel.setTextFill(Color.web("#b0b0b0"));
         threadCountSpinner = new Spinner<>(1, 100, 1);
         threadCountSpinner.setEditable(true);
-        threadCountSpinner.setPrefWidth(80);
+        threadCountSpinner.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(threadCountSpinner, Priority.SOMETIMES);
         threadCountSpinner.setStyle("-fx-background-color: #3e3e3e;");
         
         configBox.getChildren().addAll(countLabel, messageCountSpinner, threadLabel, threadCountSpinner);
@@ -250,7 +257,8 @@ public class MainStage {
         progressLabel.setFont(Font.font("System", 11));
         
         sendProgressBar = new ProgressBar(0);
-        sendProgressBar.setPrefWidth(400);
+        sendProgressBar.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(sendProgressBar, Priority.ALWAYS);
         sendProgressBar.setVisible(false);
         sendProgressBar.setStyle("-fx-accent: #4CAF50;");
 
@@ -304,7 +312,8 @@ public class MainStage {
         receiveQueueCombo = new ComboBox<>();
         receiveQueueCombo.getItems().addAll(mqConfig.getQueue().getIn(), mqConfig.getQueue().getOut());
         receiveQueueCombo.setValue(mqConfig.getQueue().getIn());
-        receiveQueueCombo.setPrefWidth(200);
+        receiveQueueCombo.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(receiveQueueCombo, Priority.ALWAYS);
         receiveQueueCombo.setStyle("-fx-background-color: #3e3e3e; -fx-text-fill: #e0e0e0;");
         queueBox.getChildren().addAll(queueLabel, receiveQueueCombo);
 
@@ -613,7 +622,7 @@ public class MainStage {
         TextField qmField = new TextField();
         qmField.setPromptText("e.g., QM1");
         qmField.setStyle("-fx-control-inner-background: #3e3e3e; -fx-text-fill: #e0e0e0;");
-        qmField.setPrefWidth(300);
+        qmField.setMaxWidth(Double.MAX_VALUE);
 
         // Channel
         Label channelLabel = new Label("Channel:");
@@ -621,7 +630,7 @@ public class MainStage {
         TextField channelField = new TextField();
         channelField.setPromptText("e.g., DEV.APP.SVRCONN");
         channelField.setStyle("-fx-control-inner-background: #3e3e3e; -fx-text-fill: #e0e0e0;");
-        channelField.setPrefWidth(300);
+        channelField.setMaxWidth(Double.MAX_VALUE);
 
         // Connection Name
         Label connLabel = new Label("Connection:");
@@ -629,7 +638,7 @@ public class MainStage {
         TextField connField = new TextField();
         connField.setPromptText("e.g., localhost(1414)");
         connField.setStyle("-fx-control-inner-background: #3e3e3e; -fx-text-fill: #e0e0e0;");
-        connField.setPrefWidth(300);
+        connField.setMaxWidth(Double.MAX_VALUE);
 
         // User
         Label userLabel = new Label("User:");
@@ -637,7 +646,7 @@ public class MainStage {
         TextField userField = new TextField();
         userField.setPromptText("e.g., app");
         userField.setStyle("-fx-control-inner-background: #3e3e3e; -fx-text-fill: #e0e0e0;");
-        userField.setPrefWidth(300);
+        userField.setMaxWidth(Double.MAX_VALUE);
 
         // Password
         Label passwordLabel = new Label("Password:");
@@ -645,7 +654,7 @@ public class MainStage {
         PasswordField passwordField = new PasswordField();
         passwordField.setPromptText("Password");
         passwordField.setStyle("-fx-control-inner-background: #3e3e3e; -fx-text-fill: #e0e0e0;");
-        passwordField.setPrefWidth(300);
+        passwordField.setMaxWidth(Double.MAX_VALUE);
 
         // Add to grid
         configForm.add(qmLabel, 0, 0);
@@ -792,7 +801,8 @@ public class MainStage {
         queueLabel.setTextFill(Color.web("#b0b0b0"));
         TextField dynamicQueueField = new TextField();
         dynamicQueueField.setPromptText("e.g., DEV.QUEUE.1");
-        dynamicQueueField.setPrefWidth(200);
+        dynamicQueueField.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(dynamicQueueField, Priority.ALWAYS);
         dynamicQueueField.setStyle("-fx-background-color: #3e3e3e; -fx-text-fill: #e0e0e0;");
         queueBox.getChildren().addAll(queueLabel, dynamicQueueField);
 
@@ -923,7 +933,8 @@ public class MainStage {
         queueLabel.setTextFill(Color.web("#b0b0b0"));
         TextField dynamicReceiveQueueField = new TextField();
         dynamicReceiveQueueField.setPromptText("e.g., DEV.QUEUE.2");
-        dynamicReceiveQueueField.setPrefWidth(200);
+        dynamicReceiveQueueField.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(dynamicReceiveQueueField, Priority.ALWAYS);
         dynamicReceiveQueueField.setStyle("-fx-background-color: #3e3e3e; -fx-text-fill: #e0e0e0;");
         queueBox.getChildren().addAll(queueLabel, dynamicReceiveQueueField);
 

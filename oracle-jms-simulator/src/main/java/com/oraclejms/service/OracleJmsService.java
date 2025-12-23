@@ -95,8 +95,16 @@ public class OracleJmsService {
             testConnection.start();
             log.info("Connection test successful to {}", currentProviderUrl);
             return true;
-        } catch (NamingException | JMSException e) {
-            log.error("Connection test failed", e);
+        } catch (NamingException e) {
+            if (e.getMessage() != null && e.getMessage().contains("Cannot instantiate class")) {
+                log.error("WebLogic JNDI classes not available. Please ensure WebLogic client JAR is in the classpath. " +
+                         "See README.md for installation instructions.", e);
+            } else {
+                log.error("JNDI lookup failed: {}", e.getMessage(), e);
+            }
+            return false;
+        } catch (JMSException e) {
+            log.error("JMS connection failed: {}", e.getMessage(), e);
             return false;
         } finally {
             if (testConnection != null) {
@@ -139,7 +147,11 @@ public class OracleJmsService {
             ctx.close();
         } catch (NamingException e) {
             log.error("Failed to connect to Oracle JMS", e);
-            throw new JMSException("Failed to connect: " + e.getMessage());
+            String errorMsg = e.getMessage();
+            if (errorMsg != null && errorMsg.contains("Cannot instantiate class")) {
+                throw new JMSException("WebLogic client library not found. Please install wlfullclient.jar or wlthint3client.jar. See README.md for instructions.");
+            }
+            throw new JMSException("Failed to connect: " + errorMsg);
         }
     }
 

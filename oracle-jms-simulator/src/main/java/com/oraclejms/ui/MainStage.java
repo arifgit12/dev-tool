@@ -237,7 +237,15 @@ public class MainStage {
                     showAlert("Success", "Connection test successful!", Alert.AlertType.INFORMATION);
                 } else {
                     showStatus("Connection test failed", "#f44336");
-                    showAlert("Error", "Connection test failed. Please check your configuration.", Alert.AlertType.ERROR);
+                    showAlert("Connection Test Failed", 
+                        "Connection test failed. Please check:\n\n" +
+                        "1. WebLogic client JAR is installed (see README.md)\n" +
+                        "2. Provider URL is correct\n" +
+                        "3. WebLogic server is running\n" +
+                        "4. Network connectivity to the server\n" +
+                        "5. Credentials are valid\n\n" +
+                        "Check the console logs for detailed error information.", 
+                        Alert.AlertType.ERROR);
                 }
             });
         }).start();

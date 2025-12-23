@@ -37,7 +37,7 @@ public class MainStage {
     private Label statusLabel;
     private Label validationLabel;
     private Label templateLabel;
-    private ComboBox<String> sendQueueCombo;
+    private TextField sendQueueField;
     private ComboBox<String> receiveQueueCombo;
     private Button connectButton;
     private Button disconnectButton;
@@ -293,13 +293,13 @@ public class MainStage {
         queueBox.setAlignment(Pos.CENTER_LEFT);
         Label queueLabel = new Label("Queue:");
         queueLabel.setTextFill(Color.web("#b0b0b0"));
-        sendQueueCombo = new ComboBox<>();
-        sendQueueCombo.getItems().addAll(jmsConfig.getQueue().getIn(), jmsConfig.getQueue().getOut());
-        sendQueueCombo.setValue(jmsConfig.getQueue().getOut());
-        sendQueueCombo.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(sendQueueCombo, Priority.ALWAYS);
-        sendQueueCombo.setStyle("-fx-background-color: #3e3e3e; -fx-text-fill: #e0e0e0;");
-        queueBox.getChildren().addAll(queueLabel, sendQueueCombo);
+        sendQueueField = new TextField();
+        sendQueueField.setText(jmsConfig.getQueue().getOut());
+        sendQueueField.setPromptText("Enter queue name (e.g., DEV.QUEUE.2)");
+        sendQueueField.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(sendQueueField, Priority.ALWAYS);
+        sendQueueField.setStyle("-fx-control-inner-background: #3e3e3e; -fx-text-fill: #e0e0e0;");
+        queueBox.getChildren().addAll(queueLabel, sendQueueField);
         
         // Message count spinner
         HBox countBox = new HBox(10);
@@ -518,8 +518,13 @@ public class MainStage {
 
     private void sendMessage() {
         String xml = xmlInputArea.getText();
-        String queue = sendQueueCombo.getValue();
+        String queue = sendQueueField.getText().trim();
         int messageCount = messageCountSpinner.getValue();
+        
+        if (queue.isEmpty()) {
+            showAlert("Error", "Queue name cannot be empty", Alert.AlertType.ERROR);
+            return;
+        }
 
         if (!XmlUtil.isValidXml(xml)) {
             showAlert("Error", "Invalid XML content", Alert.AlertType.ERROR);

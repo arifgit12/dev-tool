@@ -425,10 +425,21 @@ public class MainStage {
                     messageCountSpinner.setDisable(false);
                     threadCountSpinner.setDisable(false);
                 });
-            } catch (Exception e) {
+            } catch (JMSException e) {
                 log.error("Failed to send messages", e);
                 Platform.runLater(() -> {
                     showAlert("Send Error", "Failed to send messages: " + e.getMessage(), Alert.AlertType.ERROR);
+                    sendProgressBar.setVisible(false);
+                    progressLabel.setText("");
+                    sendButton.setDisable(!mqService.isConnected());
+                    messageCountSpinner.setDisable(false);
+                    threadCountSpinner.setDisable(false);
+                });
+            } catch (InterruptedException e) {
+                log.error("Message sending interrupted", e);
+                Thread.currentThread().interrupt();
+                Platform.runLater(() -> {
+                    showAlert("Send Error", "Message sending was interrupted", Alert.AlertType.ERROR);
                     sendProgressBar.setVisible(false);
                     progressLabel.setText("");
                     sendButton.setDisable(!mqService.isConnected());

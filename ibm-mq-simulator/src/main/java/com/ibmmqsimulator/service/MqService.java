@@ -114,60 +114,81 @@ public class MqService {
         AtomicInteger errorCount = new AtomicInteger(0);
         CountDownLatch latch = new CountDownLatch(finalMessageCount);
         
+        // History sample interval constant
+        final int HISTORY_SAMPLE_INTERVAL = 10;
+        
         log.info("Starting to send {} messages using {} threads to queue: {}", 
                  finalMessageCount, finalThreadCount, queueName);
         
         for (int i = 0; i < finalMessageCount; i++) {
             final int messageNum = i + 1;
             executorService.submit(() -> {
+                Session threadSession = null;
+                MessageProducer producer = null;
                 try {
-                    // Each thread creates its own session and producer for thread safety
-                    Session threadSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                    Queue queue = threadSession.createQueue(queueName);
-                    MessageProducer producer = threadSession.createProducer(queue);
-                    
-                    try {
-                        TextMessage message = threadSession.createTextMessage(messageContent);
-                        message.setIntProperty("messageNumber", messageNum);
-                        producer.send(message);
-                        
-                        int sent = sentCount.incrementAndGet();
-                        
-                        // Add to history (sample every 10 messages to avoid overwhelming the UI)
-                        if (messageNum % 10 == 0 || messageNum == finalMessageCount) {
-                            MqMessage mqMessage = MqMessage.builder()
-                                    .messageId(message.getJMSMessageID())
-                                    .content(String.format("[Batch %d/%d] %s", messageNum, finalMessageCount, 
-                                            messageContent.substring(0, Math.min(50, messageContent.length())) + "..."))
-                                    .queue(queueName)
-                                    .timestamp(LocalDateTime.now())
-                                    .type(MqMessage.MessageType.SENT)
-                                    .build();
-                            messageHistory.add(mqMessage);
-                        }
-                        
-                        // Report progress
-                        if (progressCallback != null) {
-                            progressCallback.onProgress(sent, finalMessageCount);
-                        }
-                        
-                    } finally {
-                        producer.close();
-                        threadSession.close();
+                    // Synchronized session creation for thread safety
+                    synchronized (connection) {
+                        threadSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
                     }
+                    Queue queue = threadSession.createQueue(queueName);
+                    producer = threadSession.createProducer(queue);
+                    
+                    TextMessage message = threadSession.createTextMessage(messageContent);
+                    message.setIntProperty("messageNumber", messageNum);
+                    producer.send(message);
+                    
+                    int sent = sentCount.incrementAndGet();
+                    
+                    // Add to history (sample every HISTORY_SAMPLE_INTERVAL messages to avoid overwhelming the UI)
+                    if (messageNum % HISTORY_SAMPLE_INTERVAL == 0 || messageNum == finalMessageCount) {
+                        MqMessage mqMessage = MqMessage.builder()
+                                .messageId(message.getJMSMessageID())
+                                .content(String.format("[Batch %d/%d] %s", messageNum, finalMessageCount, 
+                                        messageContent.substring(0, Math.min(50, messageContent.length())) + "..."))
+                                .queue(queueName)
+                                .timestamp(LocalDateTime.now())
+                                .type(MqMessage.MessageType.SENT)
+                                .build();
+                        messageHistory.add(mqMessage);
+                    }
+                    
+                    // Report progress
+                    if (progressCallback != null) {
+                        progressCallback.onProgress(sent, finalMessageCount);
+                    }
+                    
                 } catch (JMSException e) {
                     log.error("Failed to send message {}: {}", messageNum, e.getMessage());
                     errorCount.incrementAndGet();
                 } finally {
+                    // Clean up resources
+                    try {
+                        if (producer != null) producer.close();
+                    } catch (JMSException e) {
+                        log.warn("Error closing producer: {}", e.getMessage());
+                    }
+                    try {
+                        if (threadSession != null) threadSession.close();
+                    } catch (JMSException e) {
+                        log.warn("Error closing session: {}", e.getMessage());
+                    }
                     latch.countDown();
                 }
             });
         }
         
-        // Wait for all messages to be sent
+        // Wait for all messages to be sent - calculate timeout based on message count
         latch.await();
         executorService.shutdown();
-        executorService.awaitTermination(30, TimeUnit.SECONDS);
+        
+        // Timeout: 1 minute base + 2 seconds per 1000 messages
+        long timeoutSeconds = 60 + (finalMessageCount / 1000) * 2;
+        boolean terminated = executorService.awaitTermination(timeoutSeconds, TimeUnit.SECONDS);
+        
+        if (!terminated) {
+            log.warn("Executor service did not terminate within {} seconds", timeoutSeconds);
+            executorService.shutdownNow();
+        }
         
         log.info("Completed sending messages. Success: {}, Errors: {}", 
                  sentCount.get(), errorCount.get());

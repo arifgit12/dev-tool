@@ -313,6 +313,7 @@ public class MainStage {
         receivedMessagesArea.setWrapText(true);
         receivedMessagesArea.setStyle("-fx-control-inner-background: #1e1e1e; -fx-text-fill: #e0e0e0; " +
                                       "-fx-font-family: 'Courier New'; -fx-font-size: 12px;");
+        addCopyContextMenu(receivedMessagesArea);
 
         HBox buttonBox = new HBox(10);
         buttonBox.setAlignment(Pos.CENTER_LEFT);
@@ -828,6 +829,7 @@ public class MainStage {
         resultArea.setEditable(false);
         resultArea.setPrefRowCount(5);
         resultArea.setStyle("-fx-control-inner-background: #1e1e1e; -fx-text-fill: #e0e0e0;");
+        addCopyContextMenu(resultArea);
 
         VBox.setVgrow(dynamicXmlInput, Priority.ALWAYS);
         panel.getChildren().addAll(titleLabel, queueBox, xmlLabel, dynamicXmlInput, dynamicValidationLabel, buttonBox, resultLabel, resultArea);
@@ -933,6 +935,7 @@ public class MainStage {
         dynamicReceivedArea.setWrapText(true);
         dynamicReceivedArea.setStyle("-fx-control-inner-background: #1e1e1e; -fx-text-fill: #e0e0e0; " +
                                      "-fx-font-family: 'Courier New'; -fx-font-size: 12px;");
+        addCopyContextMenu(dynamicReceivedArea);
 
         // Buttons
         HBox buttonBox = new HBox(10);
@@ -1004,5 +1007,40 @@ public class MainStage {
         if (dynamicReceiveButton != null) {
             dynamicReceiveButton.setDisable(!connected);
         }
+    }
+
+    /**
+     * Adds a context menu to a TextArea for easy copy operations
+     */
+    private void addCopyContextMenu(TextArea textArea) {
+        ContextMenu contextMenu = new ContextMenu();
+        
+        // Copy menu item
+        MenuItem copyItem = new MenuItem("Copy");
+        copyItem.setOnAction(e -> {
+            String selectedText = textArea.getSelectedText();
+            if (selectedText != null && !selectedText.isEmpty()) {
+                javafx.scene.input.Clipboard clipboard = javafx.scene.input.Clipboard.getSystemClipboard();
+                javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
+                content.putString(selectedText);
+                clipboard.setContent(content);
+            }
+        });
+        
+        // Select All menu item
+        MenuItem selectAllItem = new MenuItem("Select All");
+        selectAllItem.setOnAction(e -> textArea.selectAll());
+        
+        // Copy All menu item
+        MenuItem copyAllItem = new MenuItem("Copy All");
+        copyAllItem.setOnAction(e -> {
+            javafx.scene.input.Clipboard clipboard = javafx.scene.input.Clipboard.getSystemClipboard();
+            javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
+            content.putString(textArea.getText());
+            clipboard.setContent(content);
+        });
+        
+        contextMenu.getItems().addAll(copyItem, selectAllItem, copyAllItem);
+        textArea.setContextMenu(contextMenu);
     }
 }

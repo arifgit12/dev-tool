@@ -28,19 +28,25 @@ public class OracleJmsService {
         this.config = config;
     }
 
+    /**
+     * Creates JNDI context with configured settings
+     */
+    private InitialContext createJndiContext() throws NamingException {
+        Hashtable<String, String> env = new Hashtable<>();
+        env.put(Context.INITIAL_CONTEXT_FACTORY, "weblogic.jndi.WLInitialContextFactory");
+        env.put(Context.PROVIDER_URL, config.getProviderUrl());
+        
+        if (config.getUser() != null && !config.getUser().isEmpty()) {
+            env.put(Context.SECURITY_PRINCIPAL, config.getUser());
+            env.put(Context.SECURITY_CREDENTIALS, config.getPassword());
+        }
+        
+        return new InitialContext(env);
+    }
+
     public void connect() throws JMSException {
         try {
-            // Set up JNDI context
-            Hashtable<String, String> env = new Hashtable<>();
-            env.put(Context.INITIAL_CONTEXT_FACTORY, "weblogic.jndi.WLInitialContextFactory");
-            env.put(Context.PROVIDER_URL, config.getProviderUrl());
-            
-            if (config.getUser() != null && !config.getUser().isEmpty()) {
-                env.put(Context.SECURITY_PRINCIPAL, config.getUser());
-                env.put(Context.SECURITY_CREDENTIALS, config.getPassword());
-            }
-
-            InitialContext ctx = new InitialContext(env);
+            InitialContext ctx = createJndiContext();
             
             // Look up connection factory
             ConnectionFactory connectionFactory = (ConnectionFactory) ctx.lookup(config.getConnectionFactory());
@@ -85,20 +91,14 @@ public class OracleJmsService {
             throw new JMSException("Not connected to Oracle JMS");
         }
 
+        InitialContext ctx = null;
+        MessageProducer producer = null;
+        
         try {
-            // Look up the queue
-            Hashtable<String, String> env = new Hashtable<>();
-            env.put(Context.INITIAL_CONTEXT_FACTORY, "weblogic.jndi.WLInitialContextFactory");
-            env.put(Context.PROVIDER_URL, config.getProviderUrl());
-            if (config.getUser() != null && !config.getUser().isEmpty()) {
-                env.put(Context.SECURITY_PRINCIPAL, config.getUser());
-                env.put(Context.SECURITY_CREDENTIALS, config.getPassword());
-            }
-
-            InitialContext ctx = new InitialContext(env);
+            ctx = createJndiContext();
             Queue queue = (Queue) ctx.lookup(queueName);
             
-            MessageProducer producer = session.createProducer(queue);
+            producer = session.createProducer(queue);
             TextMessage message = session.createTextMessage(xmlContent);
             producer.send(message);
             
@@ -112,13 +112,25 @@ public class OracleJmsService {
             );
             messageHistory.add(jmsMessage);
             
-            producer.close();
-            ctx.close();
-            
             log.info("Sent message to queue: {}", queueName);
         } catch (NamingException e) {
             log.error("Failed to send message", e);
             throw new JMSException("Failed to send message: " + e.getMessage());
+        } finally {
+            if (producer != null) {
+                try {
+                    producer.close();
+                } catch (JMSException e) {
+                    log.warn("Error closing producer", e);
+                }
+            }
+            if (ctx != null) {
+                try {
+                    ctx.close();
+                } catch (NamingException e) {
+                    log.warn("Error closing context", e);
+                }
+            }
         }
     }
 
@@ -128,21 +140,14 @@ public class OracleJmsService {
         }
 
         List<JmsMessage> messages = new ArrayList<>();
+        InitialContext ctx = null;
+        MessageConsumer consumer = null;
         
         try {
-            // Look up the queue
-            Hashtable<String, String> env = new Hashtable<>();
-            env.put(Context.INITIAL_CONTEXT_FACTORY, "weblogic.jndi.WLInitialContextFactory");
-            env.put(Context.PROVIDER_URL, config.getProviderUrl());
-            if (config.getUser() != null && !config.getUser().isEmpty()) {
-                env.put(Context.SECURITY_PRINCIPAL, config.getUser());
-                env.put(Context.SECURITY_CREDENTIALS, config.getPassword());
-            }
-
-            InitialContext ctx = new InitialContext(env);
+            ctx = createJndiContext();
             Queue queue = (Queue) ctx.lookup(queueName);
             
-            MessageConsumer consumer = session.createConsumer(queue);
+            consumer = session.createConsumer(queue);
             
             for (int i = 0; i < maxMessages; i++) {
                 Message message = consumer.receive(config.getReceiveTimeout());
@@ -164,13 +169,25 @@ public class OracleJmsService {
                 }
             }
             
-            consumer.close();
-            ctx.close();
-            
             log.info("Received {} messages from queue: {}", messages.size(), queueName);
         } catch (NamingException e) {
             log.error("Failed to receive messages", e);
             throw new JMSException("Failed to receive messages: " + e.getMessage());
+        } finally {
+            if (consumer != null) {
+                try {
+                    consumer.close();
+                } catch (JMSException e) {
+                    log.warn("Error closing consumer", e);
+                }
+            }
+            if (ctx != null) {
+                try {
+                    ctx.close();
+                } catch (NamingException e) {
+                    log.warn("Error closing context", e);
+                }
+            }
         }
         
         return messages;

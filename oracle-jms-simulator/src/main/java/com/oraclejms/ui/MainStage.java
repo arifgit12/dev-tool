@@ -425,9 +425,12 @@ public class MainStage {
     private void updateConnectionState(boolean connected) {
         connectButton.setDisable(connected);
         disconnectButton.setDisable(!connected);
-        sendButton.setDisable(!connected || !XmlUtil.isValidXml(xmlInputArea.getText()));
         receiveButton.setDisable(!connected);
         beautifyButton.setDisable(false);
+        
+        // Update send button based on connection and current validation state
+        String xml = xmlInputArea.getText();
+        sendButton.setDisable(!connected || xml == null || xml.trim().isEmpty() || !XmlUtil.isValidXml(xml));
         
         if (connected) {
             statusLabel.setText("Connected to " + jmsConfig.getProviderUrl());

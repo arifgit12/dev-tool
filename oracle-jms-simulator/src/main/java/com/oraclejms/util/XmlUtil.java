@@ -24,6 +24,20 @@ public class XmlUtil {
     }
 
     /**
+     * Configures DocumentBuilderFactory with secure settings
+     */
+    private static DocumentBuilderFactory createSecureDocumentBuilderFactory() throws ParserConfigurationException {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        factory.setXIncludeAware(false);
+        factory.setExpandEntityReferences(false);
+        return factory;
+    }
+
+    /**
      * Checks if the given string is valid XML
      */
     public static boolean isValidXml(String xml) {
@@ -31,14 +45,7 @@ public class XmlUtil {
             return false;
         }
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-            factory.setXIncludeAware(false);
-            factory.setExpandEntityReferences(false);
-            
+            DocumentBuilderFactory factory = createSecureDocumentBuilderFactory();
             DocumentBuilder builder = factory.newDocumentBuilder();
             builder.parse(new InputSource(new StringReader(xml)));
             return true;
@@ -52,14 +59,7 @@ public class XmlUtil {
      */
     public static String getXmlError(String xml) {
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-            factory.setXIncludeAware(false);
-            factory.setExpandEntityReferences(false);
-            
+            DocumentBuilderFactory factory = createSecureDocumentBuilderFactory();
             DocumentBuilder builder = factory.newDocumentBuilder();
             builder.parse(new InputSource(new StringReader(xml)));
             return "Valid XML";
@@ -72,14 +72,7 @@ public class XmlUtil {
      * Beautifies the given XML string
      */
     public static String beautifyXml(String xml) throws TransformerException, ParserConfigurationException, SAXException, IOException {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-        factory.setXIncludeAware(false);
-        factory.setExpandEntityReferences(false);
-        
+        DocumentBuilderFactory factory = createSecureDocumentBuilderFactory();
         DocumentBuilder builder = factory.newDocumentBuilder();
         Document document = builder.parse(new InputSource(new StringReader(xml)));
 

@@ -52,6 +52,10 @@ public class MainStage {
     private ProgressBar sendProgressBar;
     private Label progressLabel;
     private Label templateInfoLabel;
+    
+    // Dynamic tab components
+    private Button dynamicSendButton;
+    private Button dynamicReceiveButton;
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -740,6 +744,7 @@ public class MainStage {
                         dynamicConnectButton.setDisable(true);
                         dynamicDisconnectButton.setDisable(false);
                         testButton.setDisable(true);
+                        updateDynamicButtonStates(true);
                         showAlert("Success", "Connected to IBM MQ successfully!", Alert.AlertType.INFORMATION);
                     });
                 } catch (JMSException ex) {
@@ -760,6 +765,7 @@ public class MainStage {
             dynamicConnectButton.setDisable(false);
             dynamicDisconnectButton.setDisable(true);
             testButton.setDisable(false);
+            updateDynamicButtonStates(false);
         });
 
         return mainLayout;
@@ -803,7 +809,7 @@ public class MainStage {
         buttonBox.setAlignment(Pos.CENTER_LEFT);
         
         Button dynamicBeautifyButton = createStyledButton("Beautify XML", "#2196F3");
-        Button dynamicSendButton = createStyledButton("Send Message", "#4CAF50");
+        dynamicSendButton = createStyledButton("Send Message", "#4CAF50");
         Button clearButton = createStyledButton("Clear", "#757575");
         
         dynamicSendButton.setDisable(true);
@@ -928,18 +934,18 @@ public class MainStage {
         HBox buttonBox = new HBox(10);
         buttonBox.setAlignment(Pos.CENTER_LEFT);
         
-        Button receiveButton = createStyledButton("Receive Messages", "#FF9800");
+        dynamicReceiveButton = createStyledButton("Receive Messages", "#FF9800");
         Button clearButton = createStyledButton("Clear", "#757575");
         
-        receiveButton.setDisable(true);
+        dynamicReceiveButton.setDisable(true);
         
-        buttonBox.getChildren().addAll(receiveButton, clearButton);
+        buttonBox.getChildren().addAll(dynamicReceiveButton, clearButton);
 
         VBox.setVgrow(dynamicReceivedArea, Priority.ALWAYS);
         panel.getChildren().addAll(titleLabel, queueBox, messagesLabel, dynamicReceivedArea, buttonBox);
 
         // Event handlers
-        receiveButton.setOnAction(e -> {
+        dynamicReceiveButton.setOnAction(e -> {
             String queue = dynamicReceiveQueueField.getText().trim();
 
             if (queue.isEmpty()) {
@@ -981,10 +987,18 @@ public class MainStage {
 
         clearButton.setOnAction(e -> dynamicReceivedArea.clear());
 
-        // Enable receive button when connected
-        dynamicMqService.getClass(); // Just to reference the service
-        receiveButton.setDisable(!dynamicMqService.isConnected());
-
         return panel;
+    }
+
+    /**
+     * Updates the enabled/disabled state of dynamic tab buttons based on connection status
+     */
+    private void updateDynamicButtonStates(boolean connected) {
+        if (dynamicSendButton != null) {
+            dynamicSendButton.setDisable(!connected);
+        }
+        if (dynamicReceiveButton != null) {
+            dynamicReceiveButton.setDisable(!connected);
+        }
     }
 }

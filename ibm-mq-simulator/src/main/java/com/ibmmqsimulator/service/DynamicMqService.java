@@ -203,5 +203,12 @@ public class DynamicMqService {
 
         session = null;
         connection = null;
+        
+        // Clear sensitive credentials
+        password = null;
+        user = null;
+        queueManager = null;
+        channel = null;
+        connName = null;
     }
 }

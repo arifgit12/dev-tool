@@ -2,8 +2,8 @@ package com.ibmmqsimulator.util;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,7 +14,6 @@ import java.util.regex.Pattern;
 public class TemplateUtil {
 
     private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\$\\{([^}]+)\\}");
-    private static final Random RANDOM = new Random();
     
     // Common first and last names for generating random names
     private static final String[] FIRST_NAMES = {
@@ -66,7 +65,7 @@ public class TemplateUtil {
                 return UUID.randomUUID().toString();
             
             case "NUMBER":
-                return String.valueOf(RANDOM.nextInt(999999) + 1);
+                return String.valueOf(ThreadLocalRandom.current().nextInt(999999) + 1);
             
             case "AMOUNT":
             case "PRICE":
@@ -77,11 +76,11 @@ public class TemplateUtil {
             
             case "FIRSTNAME":
             case "FIRST_NAME":
-                return FIRST_NAMES[RANDOM.nextInt(FIRST_NAMES.length)];
+                return FIRST_NAMES[ThreadLocalRandom.current().nextInt(FIRST_NAMES.length)];
             
             case "LASTNAME":
             case "LAST_NAME":
-                return LAST_NAMES[RANDOM.nextInt(LAST_NAMES.length)];
+                return LAST_NAMES[ThreadLocalRandom.current().nextInt(LAST_NAMES.length)];
             
             case "EMAIL":
                 return generateEmail();
@@ -115,14 +114,14 @@ public class TemplateUtil {
      * Generates a numeric ID (1-999999999)
      */
     private static long generateId() {
-        return RANDOM.nextInt(999999999) + 1;
+        return ThreadLocalRandom.current().nextInt(999999999) + 1;
     }
 
     /**
      * Generates a random amount/price (0.01 - 9999.99)
      */
     private static String generateAmount() {
-        double amount = RANDOM.nextDouble() * 9999.99 + 0.01;
+        double amount = ThreadLocalRandom.current().nextDouble() * 9999.99 + 0.01;
         BigDecimal bd = new BigDecimal(amount).setScale(2, RoundingMode.HALF_UP);
         return bd.toString();
     }
@@ -131,8 +130,8 @@ public class TemplateUtil {
      * Generates a random full name
      */
     private static String generateName() {
-        String firstName = FIRST_NAMES[RANDOM.nextInt(FIRST_NAMES.length)];
-        String lastName = LAST_NAMES[RANDOM.nextInt(LAST_NAMES.length)];
+        String firstName = FIRST_NAMES[ThreadLocalRandom.current().nextInt(FIRST_NAMES.length)];
+        String lastName = LAST_NAMES[ThreadLocalRandom.current().nextInt(LAST_NAMES.length)];
         return firstName + " " + lastName;
     }
 
@@ -140,10 +139,10 @@ public class TemplateUtil {
      * Generates a random email address
      */
     private static String generateEmail() {
-        String firstName = FIRST_NAMES[RANDOM.nextInt(FIRST_NAMES.length)].toLowerCase();
-        String lastName = LAST_NAMES[RANDOM.nextInt(LAST_NAMES.length)].toLowerCase();
+        String firstName = FIRST_NAMES[ThreadLocalRandom.current().nextInt(FIRST_NAMES.length)].toLowerCase();
+        String lastName = LAST_NAMES[ThreadLocalRandom.current().nextInt(LAST_NAMES.length)].toLowerCase();
         String[] domains = {"example.com", "test.com", "demo.com", "mail.com"};
-        String domain = domains[RANDOM.nextInt(domains.length)];
+        String domain = domains[ThreadLocalRandom.current().nextInt(domains.length)];
         return firstName + "." + lastName + "@" + domain;
     }
 
@@ -152,9 +151,9 @@ public class TemplateUtil {
      */
     private static String generatePhone() {
         return String.format("%03d-%03d-%04d", 
-            RANDOM.nextInt(900) + 100,
-            RANDOM.nextInt(900) + 100,
-            RANDOM.nextInt(9000) + 1000);
+            ThreadLocalRandom.current().nextInt(900) + 100,
+            ThreadLocalRandom.current().nextInt(900) + 100,
+            ThreadLocalRandom.current().nextInt(9000) + 1000);
     }
 
     /**
@@ -195,12 +194,24 @@ public class TemplateUtil {
     private static String generateNumberInRange(String range) {
         String[] bounds = range.split("-");
         if (bounds.length != 2) {
-            return String.valueOf(RANDOM.nextInt(100));
+            return String.valueOf(ThreadLocalRandom.current().nextInt(100));
         }
         
-        int min = Integer.parseInt(bounds[0].trim());
-        int max = Integer.parseInt(bounds[1].trim());
-        return String.valueOf(RANDOM.nextInt(max - min + 1) + min);
+        try {
+            int min = Integer.parseInt(bounds[0].trim());
+            int max = Integer.parseInt(bounds[1].trim());
+            
+            // Validate min <= max
+            if (min > max) {
+                int temp = min;
+                min = max;
+                max = temp;
+            }
+            
+            return String.valueOf(ThreadLocalRandom.current().nextInt(max - min + 1) + min);
+        } catch (NumberFormatException e) {
+            return String.valueOf(ThreadLocalRandom.current().nextInt(100));
+        }
     }
 
     /**
@@ -212,21 +223,41 @@ public class TemplateUtil {
             return generateAmount();
         }
         
-        double min = Double.parseDouble(bounds[0].trim());
-        double max = Double.parseDouble(bounds[1].trim());
-        double amount = RANDOM.nextDouble() * (max - min) + min;
-        BigDecimal bd = new BigDecimal(amount).setScale(2, RoundingMode.HALF_UP);
-        return bd.toString();
+        try {
+            double min = Double.parseDouble(bounds[0].trim());
+            double max = Double.parseDouble(bounds[1].trim());
+            
+            // Validate min <= max
+            if (min > max) {
+                double temp = min;
+                min = max;
+                max = temp;
+            }
+            
+            double amount = ThreadLocalRandom.current().nextDouble() * (max - min) + min;
+            BigDecimal bd = new BigDecimal(amount).setScale(2, RoundingMode.HALF_UP);
+            return bd.toString();
+        } catch (NumberFormatException e) {
+            return generateAmount();
+        }
     }
 
     /**
      * Generates a random alphanumeric string of specified length
      */
     private static String generateRandomString(int length) {
+        // Validate length
+        if (length <= 0) {
+            return "";
+        }
+        if (length > 1000) {
+            length = 1000; // Cap at reasonable length
+        }
+        
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         StringBuilder sb = new StringBuilder(length);
         for (int i = 0; i < length; i++) {
-            sb.append(chars.charAt(RANDOM.nextInt(chars.length())));
+            sb.append(chars.charAt(ThreadLocalRandom.current().nextInt(chars.length())));
         }
         return sb.toString();
     }

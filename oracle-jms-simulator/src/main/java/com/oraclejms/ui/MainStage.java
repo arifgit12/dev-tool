@@ -18,7 +18,7 @@ import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import jakarta.jms.JMSException;
+import javax.jms.JMSException;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 

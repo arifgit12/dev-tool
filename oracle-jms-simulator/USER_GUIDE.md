@@ -335,3 +335,9 @@ For issues or questions:
 - Spring Boot: 3.2.0
 - JavaFX: 21
 - Java: 17+
+
+- netstat -an | findstr "7001 7101"
+- netstat -an | grep "7001 7101"
+- mvn clean package
+- mvn spring-boot:run -Dspring-boot.run.mainClass=com.oraclejms.JmsConnectionTester
+- java -cp target/oracle-jms-simulator-1.0.0.jar com.oraclejms.JmsConnectionTester

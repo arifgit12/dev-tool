@@ -2,10 +2,10 @@ package com.oraclejms.service;
 
 import com.oraclejms.model.JmsMessage;
 import com.oraclejms.model.OracleJmsConfig;
-import jakarta.jms.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -61,15 +61,23 @@ public class OracleJmsService {
      * Creates JNDI context with configured settings
      */
     private InitialContext createJndiContext() throws NamingException {
+        // Step 2: Create JNDI context
+        System.out.println("\n[2/6] Creating JNDI context...");
+
         Hashtable<String, String> env = new Hashtable<>();
         env.put(Context.INITIAL_CONTEXT_FACTORY, "weblogic.jndi.WLInitialContextFactory");
         env.put(Context.PROVIDER_URL, currentProviderUrl);
-        
+
+        // WebLogic-specific timeout settings (in milliseconds)
+        env.put("weblogic.jndi.connectTimeout", "60000");  // 60 seconds connection timeout
+        env.put("weblogic.jndi.responseReadTimeout", "60000");  // 60 seconds read timeout
+
         if (currentUser != null && !currentUser.isEmpty()) {
             env.put(Context.SECURITY_PRINCIPAL, currentUser);
             env.put(Context.SECURITY_CREDENTIALS, currentPassword);
         }
-        
+
+
         return new InitialContext(env);
     }
     
@@ -77,22 +85,38 @@ public class OracleJmsService {
      * Test connection with current parameters
      */
     public boolean testConnection() {
+
+        // Step 1: Verify WebLogic classes
+        System.out.println("\n[1/6] Verifying WebLogic classes...");
+        verifyWebLogicClasses();
+        System.out.println("✓ WebLogic classes found");
+
         InitialContext ctx = null;
         Connection testConnection = null;
         try {
             ctx = createJndiContext();
-            
+            System.out.println("✓ JNDI context created successfully");
+
+            // Step 3: Lookup connection factory
+            System.out.println("\n[3/6] Looking up connection factory: " + config.getConnectionFactory());
             // Look up connection factory
             ConnectionFactory connectionFactory = (ConnectionFactory) ctx.lookup(currentConnectionFactory);
-            
+            System.out.println("✓ Connection factory found: " + connectionFactory.getClass().getName());
+
+            // Step 4: Create connection
+            System.out.println("\n[4/6] Creating JMS connection...");
             // Create test connection
             if (currentUser != null && !currentUser.isEmpty()) {
                 testConnection = connectionFactory.createConnection(currentUser, currentPassword);
             } else {
                 testConnection = connectionFactory.createConnection();
             }
-            
+            System.out.println("✓ Connection created: " + testConnection.getClass().getName());
+
+            // Step 5: Start connection
+            System.out.println("\n[5/6] Starting connection...");
             testConnection.start();
+            System.out.println("✓ Connection started successfully");
             log.info("Connection test successful to {}", currentProviderUrl);
             return true;
         } catch (NamingException e) {
@@ -287,5 +311,15 @@ public class OracleJmsService {
 
     public void clearHistory() {
         messageHistory.clear();
+    }
+
+    private void verifyWebLogicClasses() {
+        try {
+            Class.forName("weblogic.jndi.WLInitialContextFactory");
+            Class.forName("weblogic.jms.client.JMSConnectionFactory");
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 }

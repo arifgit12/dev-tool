@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.0</version>
+        <version>2.7.18</version>
         <relativePath/>
     </parent>
 
@@ -19,8 +19,8 @@
     <description>Oracle JMS Simulator with JavaFX UI</description>
 
     <properties>
-        <java.version>17</java.version>
-        <javafx.version>21</javafx.version>
+        <java.version>11</java.version>
+        <javafx.version>17.0.2</javafx.version>
     </properties>
 
     <dependencies>
@@ -32,8 +32,9 @@
 
         <!-- JMS API -->
         <dependency>
-            <groupId>jakarta.jms</groupId>
-            <artifactId>jakarta.jms-api</artifactId>
+            <groupId>javax.jms</groupId>
+            <artifactId>javax.jms-api</artifactId>
+            <version>2.0.1</version>
         </dependency>
 
         <!-- JavaFX Dependencies -->
@@ -93,6 +94,15 @@
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
+
+        <!-- WebLogic Thin Client (from lib folder) -->
+        <dependency>
+            <groupId>com.oracle.weblogic</groupId>
+            <artifactId>wlthint3client</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/wlthint3client.jar</systemPath>
+        </dependency>
     </dependencies>
 
     <build>
@@ -102,6 +112,42 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>com.oraclejms.OracleJmsSimulatorApplication</mainClass>
+                    <includeSystemScope>true</includeSystemScope>
+                    <requiresUnpack>
+                        <dependency>
+                            <groupId>com.oracle.weblogic</groupId>
+                            <artifactId>wlthint3client</artifactId>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.openjfx</groupId>
+                            <artifactId>javafx-controls</artifactId>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.openjfx</groupId>
+                            <artifactId>javafx-fxml</artifactId>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.openjfx</groupId>
+                            <artifactId>javafx-graphics</artifactId>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.openjfx</groupId>
+                            <artifactId>javafx-base</artifactId>
+                        </dependency>
+                    </requiresUnpack>
+                    <jvmArguments>
+                        --add-opens java.base/java.io=ALL-UNNAMED
+                        --add-opens java.base/java.lang=ALL-UNNAMED
+                        --add-opens java.base/java.lang.invoke=ALL-UNNAMED
+                        --add-opens java.base/java.lang.reflect=ALL-UNNAMED
+                        --add-opens java.base/java.net=ALL-UNNAMED
+                        --add-opens java.base/java.nio=ALL-UNNAMED
+                        --add-opens java.base/java.security=ALL-UNNAMED
+                        --add-opens java.base/java.util=ALL-UNNAMED
+                        --add-opens java.base/sun.nio.ch=ALL-UNNAMED
+                        --add-opens java.base/sun.security.action=ALL-UNNAMED
+                        --add-opens java.rmi/sun.rmi.transport=ALL-UNNAMED
+                    </jvmArguments>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
@@ -116,6 +162,10 @@
                 <version>0.0.8</version>
                 <configuration>
                     <mainClass>com.oraclejms.OracleJmsSimulatorApplication</mainClass>
+                    <options>
+                        <option>--add-opens</option>
+                        <option>javafx.graphics/com.sun.javafx.application=ALL-UNNAMED</option>
+                    </options>
                 </configuration>
             </plugin>
         </plugins>

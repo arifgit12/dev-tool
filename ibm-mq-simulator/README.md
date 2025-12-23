@@ -10,6 +10,11 @@ A professional IBM MQ Simulator built with Spring Boot and JavaFX for testing an
   - Auto-beautification of XML content
   - Real-time XML validation
   - Send button automatically disabled for invalid XML
+- **High-Performance Message Sending**:
+  - Configurable message count (1-20,000 messages)
+  - Multi-threaded delivery (1-100 threads)
+  - Real-time progress tracking with progress bar
+  - Fast batch message sending
 - **Send Messages** to configurable queues
 - **Receive Messages** from queues
 - **Message History** tracking for sent and received messages
@@ -72,7 +77,10 @@ java -jar target/ibm-mq-simulator-1.0.0.jar
    - Click "Beautify XML" to format the XML with proper indentation
    - The Send button will be automatically disabled if XML is invalid
    - Select target queue from dropdown
+   - **Configure message count** (1-20000): Set how many copies of the message to send
+   - **Configure thread count** (1-100): Set number of concurrent threads for fast delivery
    - Click "Send Message" to send to IBM MQ
+   - Progress bar shows real-time sending progress for batch operations
 
 3. **Receive Messages**
    - Select the queue to receive from

@@ -12,7 +12,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Service
@@ -87,6 +88,102 @@ public class MqService {
         } finally {
             producer.close();
         }
+    }
+
+    /**
+     * Sends multiple messages using multiple threads for fast delivery
+     * @param queueName Target queue name
+     * @param messageContent XML message content
+     * @param messageCount Number of messages to send (1-20000)
+     * @param threadCount Number of threads to use (1-100)
+     * @param progressCallback Callback for progress updates (sent, total)
+     */
+    public void sendMessagesMultiThreaded(String queueName, String messageContent, 
+                                          int messageCount, int threadCount,
+                                          ProgressCallback progressCallback) throws JMSException, InterruptedException {
+        if (!isConnected) {
+            throw new JMSException("Not connected to IBM MQ");
+        }
+
+        // Validate input and make final for lambda usage
+        final int finalMessageCount = Math.max(1, Math.min(20000, messageCount));
+        final int finalThreadCount = Math.max(1, Math.min(100, threadCount));
+        
+        ExecutorService executorService = Executors.newFixedThreadPool(finalThreadCount);
+        AtomicInteger sentCount = new AtomicInteger(0);
+        AtomicInteger errorCount = new AtomicInteger(0);
+        CountDownLatch latch = new CountDownLatch(finalMessageCount);
+        
+        log.info("Starting to send {} messages using {} threads to queue: {}", 
+                 finalMessageCount, finalThreadCount, queueName);
+        
+        for (int i = 0; i < finalMessageCount; i++) {
+            final int messageNum = i + 1;
+            executorService.submit(() -> {
+                try {
+                    // Each thread creates its own session and producer for thread safety
+                    Session threadSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                    Queue queue = threadSession.createQueue(queueName);
+                    MessageProducer producer = threadSession.createProducer(queue);
+                    
+                    try {
+                        TextMessage message = threadSession.createTextMessage(messageContent);
+                        message.setIntProperty("messageNumber", messageNum);
+                        producer.send(message);
+                        
+                        int sent = sentCount.incrementAndGet();
+                        
+                        // Add to history (sample every 10 messages to avoid overwhelming the UI)
+                        if (messageNum % 10 == 0 || messageNum == finalMessageCount) {
+                            MqMessage mqMessage = MqMessage.builder()
+                                    .messageId(message.getJMSMessageID())
+                                    .content(String.format("[Batch %d/%d] %s", messageNum, finalMessageCount, 
+                                            messageContent.substring(0, Math.min(50, messageContent.length())) + "..."))
+                                    .queue(queueName)
+                                    .timestamp(LocalDateTime.now())
+                                    .type(MqMessage.MessageType.SENT)
+                                    .build();
+                            messageHistory.add(mqMessage);
+                        }
+                        
+                        // Report progress
+                        if (progressCallback != null) {
+                            progressCallback.onProgress(sent, finalMessageCount);
+                        }
+                        
+                    } finally {
+                        producer.close();
+                        threadSession.close();
+                    }
+                } catch (JMSException e) {
+                    log.error("Failed to send message {}: {}", messageNum, e.getMessage());
+                    errorCount.incrementAndGet();
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+        
+        // Wait for all messages to be sent
+        latch.await();
+        executorService.shutdown();
+        executorService.awaitTermination(30, TimeUnit.SECONDS);
+        
+        log.info("Completed sending messages. Success: {}, Errors: {}", 
+                 sentCount.get(), errorCount.get());
+        
+        if (errorCount.get() > 0) {
+            throw new JMSException(String.format("Failed to send %d messages out of %d", 
+                                                 errorCount.get(), finalMessageCount));
+        }
+    }
+
+    /**
+     * Callback interface for progress updates
+     */
+    @FunctionalInterface
+    public interface ProgressCallback {
+        void onProgress(int sent, int total);
     }
 
     public List<MqMessage> receiveMessages(String queueName, int maxMessages) throws JMSException {

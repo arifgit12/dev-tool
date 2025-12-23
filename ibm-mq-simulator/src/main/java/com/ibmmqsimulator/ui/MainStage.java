@@ -43,6 +43,10 @@ public class MainStage {
     private Button receiveButton;
     private Button clearHistoryButton;
     private ListView<String> historyListView;
+    private Spinner<Integer> messageCountSpinner;
+    private Spinner<Integer> threadCountSpinner;
+    private ProgressBar sendProgressBar;
+    private Label progressLabel;
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -165,6 +169,26 @@ public class MainStage {
         sendQueueCombo.setStyle("-fx-background-color: #3e3e3e; -fx-text-fill: #e0e0e0;");
         queueBox.getChildren().addAll(queueLabel, sendQueueCombo);
 
+        // Message count and thread configuration
+        HBox configBox = new HBox(15);
+        configBox.setAlignment(Pos.CENTER_LEFT);
+        
+        Label countLabel = new Label("Message Count:");
+        countLabel.setTextFill(Color.web("#b0b0b0"));
+        messageCountSpinner = new Spinner<>(1, 20000, 1);
+        messageCountSpinner.setEditable(true);
+        messageCountSpinner.setPrefWidth(100);
+        messageCountSpinner.setStyle("-fx-background-color: #3e3e3e;");
+        
+        Label threadLabel = new Label("Threads:");
+        threadLabel.setTextFill(Color.web("#b0b0b0"));
+        threadCountSpinner = new Spinner<>(1, 100, 1);
+        threadCountSpinner.setEditable(true);
+        threadCountSpinner.setPrefWidth(80);
+        threadCountSpinner.setStyle("-fx-background-color: #3e3e3e;");
+        
+        configBox.getChildren().addAll(countLabel, messageCountSpinner, threadLabel, threadCountSpinner);
+
         Label xmlLabel = new Label("XML Message Content:");
         xmlLabel.setTextFill(Color.web("#b0b0b0"));
 
@@ -178,6 +202,16 @@ public class MainStage {
 
         validationLabel = new Label("");
         validationLabel.setFont(Font.font("System", 11));
+
+        // Progress bar for multi-threaded sending
+        progressLabel = new Label("");
+        progressLabel.setTextFill(Color.web("#b0b0b0"));
+        progressLabel.setFont(Font.font("System", 11));
+        
+        sendProgressBar = new ProgressBar(0);
+        sendProgressBar.setPrefWidth(400);
+        sendProgressBar.setVisible(false);
+        sendProgressBar.setStyle("-fx-accent: #4CAF50;");
 
         HBox buttonBox = new HBox(10);
         buttonBox.setAlignment(Pos.CENTER_LEFT);
@@ -205,7 +239,8 @@ public class MainStage {
 
         VBox.setVgrow(xmlInputArea, Priority.ALWAYS);
         panel.getChildren().addAll(
-            titleLabel, queueBox, xmlLabel, xmlInputArea, validationLabel, 
+            titleLabel, queueBox, configBox, xmlLabel, xmlInputArea, validationLabel,
+            progressLabel, sendProgressBar, 
             buttonBox, historyLabel, historyListView, clearHistoryButton
         );
         
@@ -352,23 +387,54 @@ public class MainStage {
     private void sendMessage() {
         String xml = xmlInputArea.getText();
         String queue = sendQueueCombo.getValue();
+        int messageCount = messageCountSpinner.getValue();
+        int threadCount = threadCountSpinner.getValue();
 
         if (!XmlUtil.isValidXml(xml)) {
             showAlert("Error", "Invalid XML content", Alert.AlertType.ERROR);
             return;
         }
 
+        // Disable controls during sending
+        sendButton.setDisable(true);
+        messageCountSpinner.setDisable(true);
+        threadCountSpinner.setDisable(true);
+        sendProgressBar.setVisible(true);
+        sendProgressBar.setProgress(0);
+        progressLabel.setText(String.format("Sending 0/%d messages...", messageCount));
+        
         new Thread(() -> {
             try {
-                mqService.sendMessage(queue, xml);
+                mqService.sendMessagesMultiThreaded(queue, xml, messageCount, threadCount, 
+                    (sent, total) -> {
+                        // Progress callback
+                        Platform.runLater(() -> {
+                            double progress = (double) sent / total;
+                            sendProgressBar.setProgress(progress);
+                            progressLabel.setText(String.format("Sending %d/%d messages...", sent, total));
+                        });
+                    });
+                
                 Platform.runLater(() -> {
-                    showStatus("Message sent successfully to " + queue, "#4CAF50");
+                    showStatus(String.format("Successfully sent %d messages to %s using %d threads", 
+                        messageCount, queue, threadCount), "#4CAF50");
                     updateHistoryList();
+                    sendProgressBar.setVisible(false);
+                    progressLabel.setText("");
+                    sendButton.setDisable(!mqService.isConnected());
+                    messageCountSpinner.setDisable(false);
+                    threadCountSpinner.setDisable(false);
                 });
-            } catch (JMSException e) {
-                log.error("Failed to send message", e);
-                Platform.runLater(() -> 
-                    showAlert("Send Error", "Failed to send message: " + e.getMessage(), Alert.AlertType.ERROR));
+            } catch (Exception e) {
+                log.error("Failed to send messages", e);
+                Platform.runLater(() -> {
+                    showAlert("Send Error", "Failed to send messages: " + e.getMessage(), Alert.AlertType.ERROR);
+                    sendProgressBar.setVisible(false);
+                    progressLabel.setText("");
+                    sendButton.setDisable(!mqService.isConnected());
+                    messageCountSpinner.setDisable(false);
+                    threadCountSpinner.setDisable(false);
+                });
             }
         }).start();
     }

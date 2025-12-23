@@ -16,6 +16,15 @@ import java.io.StringWriter;
 
 public class XmlUtil {
 
+    private static final DocumentBuilderFactory DOCUMENT_BUILDER_FACTORY;
+    private static final TransformerFactory TRANSFORMER_FACTORY;
+
+    static {
+        DOCUMENT_BUILDER_FACTORY = DocumentBuilderFactory.newInstance();
+        DOCUMENT_BUILDER_FACTORY.setNamespaceAware(true);
+        TRANSFORMER_FACTORY = TransformerFactory.newInstance();
+    }
+
     /**
      * Validates if the given string is valid XML
      */
@@ -25,9 +34,7 @@ public class XmlUtil {
         }
 
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setNamespaceAware(true);
-            DocumentBuilder builder = factory.newDocumentBuilder();
+            DocumentBuilder builder = DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
             builder.parse(new InputSource(new StringReader(xml)));
             return true;
         } catch (Exception e) {
@@ -43,13 +50,10 @@ public class XmlUtil {
             return xml;
         }
 
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        DocumentBuilder builder = factory.newDocumentBuilder();
+        DocumentBuilder builder = DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
         Document document = builder.parse(new InputSource(new StringReader(xml)));
 
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer();
+        Transformer transformer = TRANSFORMER_FACTORY.newTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
         transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
@@ -70,9 +74,7 @@ public class XmlUtil {
         }
 
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setNamespaceAware(true);
-            DocumentBuilder builder = factory.newDocumentBuilder();
+            DocumentBuilder builder = DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
             builder.parse(new InputSource(new StringReader(xml)));
             return null;
         } catch (SAXException e) {

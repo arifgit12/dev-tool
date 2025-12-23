@@ -70,9 +70,12 @@ public class MainStage {
         root.setBottom(bottomPanel);
 
         Scene scene = new Scene(root, 1400, 900);
-        scene.getStylesheets().add(getClass().getResource("/styles.css") != null 
-            ? getClass().getResource("/styles.css").toExternalForm() 
-            : "");
+        
+        // Load stylesheet if available
+        var styleResource = getClass().getResource("/styles.css");
+        if (styleResource != null) {
+            scene.getStylesheets().add(styleResource.toExternalForm());
+        }
         
         primaryStage.setScene(scene);
         primaryStage.show();

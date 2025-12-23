@@ -24,10 +24,12 @@ public class JmsConnectionConfig {
     @Column(nullable = false)
     private String connectionFactory;
     
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String username;
     
-    @Column(nullable = false)
+    // Note: Password is stored in plain text for simplicity.
+    // In production, consider encrypting this field or using a secure credential management system.
+    @Column(nullable = true)
     private String password;
     
     @Column(nullable = false)

@@ -30,11 +30,20 @@
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
 
-        <!-- IBM MQ Spring Boot Starter -->
+        <!-- IBM MQ Dependencies -->
         <dependency>
             <groupId>com.ibm.mq</groupId>
             <artifactId>mq-jms-spring-boot-starter</artifactId>
             <version>3.2.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ibm.mq</groupId>
+            <artifactId>com.ibm.mq.allclient</artifactId>
+            <version>9.3.4.1</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.jms</groupId>
+            <artifactId>jakarta.jms-api</artifactId>
         </dependency>
 
         <!-- JavaFX Dependencies -->

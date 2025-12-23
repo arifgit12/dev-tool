@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<order>
+    <orderId>ORD-12345</orderId>
+    <orderDate>2024-12-23T10:30:00</orderDate>
+    <customer>
+        <customerId>CUST-001</customerId>
+        <name>John Doe</name>
+        <email>john.doe@example.com</email>
+        <phone>+1-555-0123</phone>
+    </customer>
+    <shippingAddress>
+        <street>123 Main Street</street>
+        <city>Springfield</city>
+        <state>IL</state>
+        <zipCode>62701</zipCode>
+        <country>USA</country>
+    </shippingAddress>
+    <items>
+        <item>
+            <itemId>ITEM-001</itemId>
+            <name>Laptop Computer</name>
+            <quantity>1</quantity>
+            <unitPrice>999.99</unitPrice>
+            <totalPrice>999.99</totalPrice>
+        </item>
+        <item>
+            <itemId>ITEM-002</itemId>
+            <name>Wireless Mouse</name>
+            <quantity>2</quantity>
+            <unitPrice>29.99</unitPrice>
+            <totalPrice>59.98</totalPrice>
+        </item>
+    </items>
+    <summary>
+        <subtotal>1059.97</subtotal>
+        <tax>95.40</tax>
+        <shipping>15.00</shipping>
+        <total>1170.37</total>
+    </summary>
+    <paymentMethod>Credit Card</paymentMethod>
+    <status>Pending</status>
+</order>

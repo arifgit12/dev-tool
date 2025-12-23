@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<notification>
+    <messageId>MSG-98765</messageId>
+    <type>email</type>
+    <recipient>user@example.com</recipient>
+    <subject>Welcome to IBM MQ Simulator</subject>
+    <body>
+        <![CDATA[
+        Hello and welcome!
+        
+        This is a sample notification message for testing the IBM MQ Simulator.
+        You can customize this XML to meet your testing needs.
+        ]]>
+    </body>
+    <timestamp>2023-12-23T12:30:00Z</timestamp>
+    <priority>high</priority>
+</notification>

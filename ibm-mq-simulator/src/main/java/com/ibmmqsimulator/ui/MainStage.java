@@ -3,6 +3,7 @@ package com.ibmmqsimulator.ui;
 import com.ibmmqsimulator.model.MqConfig;
 import com.ibmmqsimulator.model.MqMessage;
 import com.ibmmqsimulator.service.MqService;
+import com.ibmmqsimulator.util.TemplateUtil;
 import com.ibmmqsimulator.util.XmlUtil;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -47,6 +48,7 @@ public class MainStage {
     private Spinner<Integer> threadCountSpinner;
     private ProgressBar sendProgressBar;
     private Label progressLabel;
+    private Label templateInfoLabel;
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -203,6 +205,11 @@ public class MainStage {
         validationLabel = new Label("");
         validationLabel.setFont(Font.font("System", 11));
 
+        // Template info label
+        templateInfoLabel = new Label("");
+        templateInfoLabel.setFont(Font.font("System", 11));
+        templateInfoLabel.setTextFill(Color.web("#FF9800"));
+
         // Progress bar for multi-threaded sending
         progressLabel = new Label("");
         progressLabel.setTextFill(Color.web("#b0b0b0"));
@@ -239,7 +246,7 @@ public class MainStage {
 
         VBox.setVgrow(xmlInputArea, Priority.ALWAYS);
         panel.getChildren().addAll(
-            titleLabel, queueBox, configBox, xmlLabel, xmlInputArea, validationLabel,
+            titleLabel, queueBox, configBox, xmlLabel, xmlInputArea, validationLabel, templateInfoLabel,
             progressLabel, sendProgressBar, 
             buttonBox, historyLabel, historyListView, clearHistoryButton
         );
@@ -329,6 +336,7 @@ public class MainStage {
         if (xml == null || xml.trim().isEmpty()) {
             validationLabel.setText("");
             validationLabel.setTextFill(Color.web("#b0b0b0"));
+            templateInfoLabel.setText("");
             sendButton.setDisable(true);
             return;
         }
@@ -338,10 +346,19 @@ public class MainStage {
             validationLabel.setText("✓ Valid XML");
             validationLabel.setTextFill(Color.web("#4CAF50"));
             sendButton.setDisable(!mqService.isConnected());
+            
+            // Check for template variables
+            if (TemplateUtil.hasPlaceholders(xml)) {
+                templateInfoLabel.setText("ℹ Dynamic parameters detected - each message will have unique values");
+                templateInfoLabel.setTextFill(Color.web("#FF9800"));
+            } else {
+                templateInfoLabel.setText("");
+            }
         } else {
             String error = XmlUtil.getXmlError(xml);
             validationLabel.setText("✗ " + error);
             validationLabel.setTextFill(Color.web("#f44336"));
+            templateInfoLabel.setText("");
             sendButton.setDisable(true);
         }
     }

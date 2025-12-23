@@ -4,6 +4,7 @@ import com.ibm.mq.jms.MQConnectionFactory;
 import com.ibm.msg.client.wmq.WMQConstants;
 import com.ibmmqsimulator.model.MqConfig;
 import com.ibmmqsimulator.model.MqMessage;
+import com.ibmmqsimulator.util.TemplateUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -72,12 +73,15 @@ public class MqService {
         MessageProducer producer = session.createProducer(queue);
         
         try {
-            TextMessage message = session.createTextMessage(messageContent);
+            // Apply dynamic parameter substitution
+            String processedContent = TemplateUtil.replacePlaceholders(messageContent);
+            
+            TextMessage message = session.createTextMessage(processedContent);
             producer.send(message);
             
             MqMessage mqMessage = MqMessage.builder()
                     .messageId(message.getJMSMessageID())
-                    .content(messageContent)
+                    .content(processedContent)
                     .queue(queueName)
                     .timestamp(LocalDateTime.now())
                     .type(MqMessage.MessageType.SENT)
@@ -133,7 +137,10 @@ public class MqService {
                     Queue queue = threadSession.createQueue(queueName);
                     producer = threadSession.createProducer(queue);
                     
-                    TextMessage message = threadSession.createTextMessage(messageContent);
+                    // Apply dynamic parameter substitution to the message content
+                    String processedContent = TemplateUtil.replacePlaceholders(messageContent);
+                    
+                    TextMessage message = threadSession.createTextMessage(processedContent);
                     message.setIntProperty("messageNumber", messageNum);
                     producer.send(message);
                     
@@ -144,7 +151,7 @@ public class MqService {
                         MqMessage mqMessage = MqMessage.builder()
                                 .messageId(message.getJMSMessageID())
                                 .content(String.format("[Batch %d/%d] %s", messageNum, finalMessageCount, 
-                                        messageContent.substring(0, Math.min(50, messageContent.length())) + "..."))
+                                        processedContent.substring(0, Math.min(50, processedContent.length())) + "..."))
                                 .queue(queueName)
                                 .timestamp(LocalDateTime.now())
                                 .type(MqMessage.MessageType.SENT)

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<order>
+    <orderId>${ID}</orderId>
+    <orderNumber>ORD-${NUMBER}</orderNumber>
+    <customer>
+        <customerId>${UUID}</customerId>
+        <name>${NAME}</name>
+        <email>${EMAIL}</email>
+        <phone>${PHONE}</phone>
+    </customer>
+    <items>
+        <item>
+            <productId>${NUMBER:1000-9999}</productId>
+            <name>Sample Product</name>
+            <quantity>${NUMBER:1-10}</quantity>
+            <price>${AMOUNT:10-1000}</price>
+        </item>
+    </items>
+    <totalAmount>${AMOUNT}</totalAmount>
+    <orderDate>${DATE}</orderDate>
+    <timestamp>${TIMESTAMP}</timestamp>
+    <status>pending</status>
+    <reference>${RANDOM}</reference>
+</order>

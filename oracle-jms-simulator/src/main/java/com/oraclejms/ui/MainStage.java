@@ -2,6 +2,7 @@ package com.oraclejms.ui;
 
 import com.oraclejms.model.JmsMessage;
 import com.oraclejms.model.OracleJmsConfig;
+import com.oraclejms.service.ConnectionConfigService;
 import com.oraclejms.service.OracleJmsService;
 import com.oraclejms.util.XmlUtil;
 import javafx.application.Platform;
@@ -27,6 +28,7 @@ public class MainStage {
 
     private final OracleJmsService jmsService;
     private final OracleJmsConfig jmsConfig;
+    private final ConnectionConfigService configService;
 
     private TextArea xmlInputArea;
     private Button sendButton;
@@ -41,12 +43,21 @@ public class MainStage {
     private Button receiveButton;
     private Button clearHistoryButton;
     private ListView<String> historyListView;
+    
+    // Editable connection fields
+    private TextField providerUrlField;
+    private TextField connectionFactoryField;
+    private TextField usernameField;
+    private PasswordField passwordField;
+    private Button saveButton;
+    private Button testButton;
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public MainStage(OracleJmsService jmsService, OracleJmsConfig jmsConfig) {
+    public MainStage(OracleJmsService jmsService, OracleJmsConfig jmsConfig, ConnectionConfigService configService) {
         this.jmsService = jmsService;
         this.jmsConfig = jmsConfig;
+        this.configService = configService;
     }
 
     public void start(Stage primaryStage) {
@@ -54,6 +65,9 @@ public class MainStage {
         
         BorderPane root = new BorderPane();
         root.setStyle("-fx-background-color: #2b2b2b;");
+        
+        // Load saved configuration on startup
+        loadSavedConfiguration();
 
         // Top Panel - Connection
         VBox topPanel = createConnectionPanel();
@@ -77,6 +91,21 @@ public class MainStage {
 
         updateConnectionState(false);
     }
+    
+    /**
+     * Load saved configuration from database
+     */
+    private void loadSavedConfiguration() {
+        configService.getDefaultConfiguration().ifPresent(config -> {
+            log.info("Loading saved configuration from database");
+            jmsService.updateConnectionParameters(
+                config.getProviderUrl(),
+                config.getConnectionFactory(),
+                config.getUsername(),
+                config.getPassword()
+            );
+        });
+    }
 
     private VBox createConnectionPanel() {
         VBox panel = new VBox(10);
@@ -93,23 +122,125 @@ public class MainStage {
         connectionGrid.setPadding(new Insets(10, 0, 0, 0));
 
         int row = 0;
-        addConnectionField(connectionGrid, row++, "JMS Provider URL:", jmsConfig.getProviderUrl());
-        addConnectionField(connectionGrid, row++, "Connection Factory:", jmsConfig.getConnectionFactory());
-        addConnectionField(connectionGrid, row++, "User:", jmsConfig.getUser());
+        
+        // JMS Provider URL
+        Label providerUrlLabel = new Label("JMS Provider URL:");
+        providerUrlLabel.setTextFill(Color.web("#b0b0b0"));
+        providerUrlLabel.setFont(Font.font("System", 12));
+        providerUrlField = new TextField(jmsConfig.getProviderUrl());
+        providerUrlField.setStyle("-fx-control-inner-background: #3e3e3e; -fx-text-fill: #e0e0e0;");
+        providerUrlField.setPromptText("e.g., t3://localhost:7001");
+        connectionGrid.add(providerUrlLabel, 0, row);
+        connectionGrid.add(providerUrlField, 1, row++);
+        
+        // Connection Factory
+        Label connectionFactoryLabel = new Label("Connection Factory:");
+        connectionFactoryLabel.setTextFill(Color.web("#b0b0b0"));
+        connectionFactoryLabel.setFont(Font.font("System", 12));
+        connectionFactoryField = new TextField(jmsConfig.getConnectionFactory());
+        connectionFactoryField.setStyle("-fx-control-inner-background: #3e3e3e; -fx-text-fill: #e0e0e0;");
+        connectionFactoryField.setPromptText("e.g., weblogic.jms.ConnectionFactory");
+        connectionGrid.add(connectionFactoryLabel, 0, row);
+        connectionGrid.add(connectionFactoryField, 1, row++);
+        
+        // Username
+        Label usernameLabel = new Label("Username:");
+        usernameLabel.setTextFill(Color.web("#b0b0b0"));
+        usernameLabel.setFont(Font.font("System", 12));
+        usernameField = new TextField(jmsConfig.getUser());
+        usernameField.setStyle("-fx-control-inner-background: #3e3e3e; -fx-text-fill: #e0e0e0;");
+        usernameField.setPromptText("Username");
+        connectionGrid.add(usernameLabel, 0, row);
+        connectionGrid.add(usernameField, 1, row++);
+        
+        // Password
+        Label passwordLabel = new Label("Password:");
+        passwordLabel.setTextFill(Color.web("#b0b0b0"));
+        passwordLabel.setFont(Font.font("System", 12));
+        passwordField = new PasswordField();
+        passwordField.setText(jmsConfig.getPassword());
+        passwordField.setStyle("-fx-control-inner-background: #3e3e3e; -fx-text-fill: #e0e0e0;");
+        passwordField.setPromptText("Password");
+        connectionGrid.add(passwordLabel, 0, row);
+        connectionGrid.add(passwordField, 1, row++);
+        
+        // Make text fields grow horizontally
+        providerUrlField.setMaxWidth(Double.MAX_VALUE);
+        connectionFactoryField.setMaxWidth(Double.MAX_VALUE);
+        usernameField.setMaxWidth(Double.MAX_VALUE);
+        passwordField.setMaxWidth(Double.MAX_VALUE);
+        GridPane.setHgrow(providerUrlField, Priority.ALWAYS);
+        GridPane.setHgrow(connectionFactoryField, Priority.ALWAYS);
+        GridPane.setHgrow(usernameField, Priority.ALWAYS);
+        GridPane.setHgrow(passwordField, Priority.ALWAYS);
 
         HBox buttonBox = new HBox(10);
         buttonBox.setAlignment(Pos.CENTER_LEFT);
         
+        saveButton = createStyledButton("Save", "#2196F3");
+        testButton = createStyledButton("Test Connection", "#FF9800");
         connectButton = createStyledButton("Connect", "#4CAF50");
         disconnectButton = createStyledButton("Disconnect", "#f44336");
         
+        saveButton.setOnAction(e -> saveConfiguration());
+        testButton.setOnAction(e -> testConnection());
         connectButton.setOnAction(e -> connectToJms());
         disconnectButton.setOnAction(e -> disconnectFromJms());
         
-        buttonBox.getChildren().addAll(connectButton, disconnectButton);
+        buttonBox.getChildren().addAll(saveButton, testButton, connectButton, disconnectButton);
 
         panel.getChildren().addAll(titleLabel, connectionGrid, buttonBox);
         return panel;
+    }
+    
+    private void saveConfiguration() {
+        String providerUrl = providerUrlField.getText().trim();
+        String connectionFactory = connectionFactoryField.getText().trim();
+        String username = usernameField.getText().trim();
+        String password = passwordField.getText();
+        
+        if (providerUrl.isEmpty() || connectionFactory.isEmpty()) {
+            showAlert("Validation Error", "Provider URL and Connection Factory are required", Alert.AlertType.WARNING);
+            return;
+        }
+        
+        try {
+            configService.saveConfiguration(providerUrl, connectionFactory, username, password);
+            jmsService.updateConnectionParameters(providerUrl, connectionFactory, username, password);
+            showStatus("Configuration saved successfully", "#4CAF50");
+            showAlert("Success", "Connection configuration saved successfully", Alert.AlertType.INFORMATION);
+        } catch (Exception e) {
+            log.error("Failed to save configuration", e);
+            showAlert("Error", "Failed to save configuration: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+    
+    private void testConnection() {
+        String providerUrl = providerUrlField.getText().trim();
+        String connectionFactory = connectionFactoryField.getText().trim();
+        String username = usernameField.getText().trim();
+        String password = passwordField.getText();
+        
+        if (providerUrl.isEmpty() || connectionFactory.isEmpty()) {
+            showAlert("Validation Error", "Provider URL and Connection Factory are required", Alert.AlertType.WARNING);
+            return;
+        }
+        
+        // Update parameters temporarily for testing
+        jmsService.updateConnectionParameters(providerUrl, connectionFactory, username, password);
+        
+        new Thread(() -> {
+            boolean success = jmsService.testConnection();
+            Platform.runLater(() -> {
+                if (success) {
+                    showStatus("Connection test successful", "#4CAF50");
+                    showAlert("Success", "Connection test successful!", Alert.AlertType.INFORMATION);
+                } else {
+                    showStatus("Connection test failed", "#f44336");
+                    showAlert("Error", "Connection test failed. Please check your configuration.", Alert.AlertType.ERROR);
+                }
+            });
+        }).start();
     }
 
     private void addConnectionField(GridPane grid, int row, String labelText, String value) {
@@ -329,7 +460,7 @@ public class MainStage {
                 jmsService.connect();
                 Platform.runLater(() -> {
                     updateConnectionState(true);
-                    showStatus("Connected to " + jmsConfig.getProviderUrl(), "#4CAF50");
+                    showStatus("Connected to " + jmsService.getCurrentProviderUrl(), "#4CAF50");
                 });
             } catch (JMSException e) {
                 log.error("Connection failed", e);
@@ -433,7 +564,7 @@ public class MainStage {
         sendButton.setDisable(!connected || xml == null || xml.trim().isEmpty() || !XmlUtil.isValidXml(xml));
         
         if (connected) {
-            statusLabel.setText("Connected to " + jmsConfig.getProviderUrl());
+            statusLabel.setText("Connected to " + jmsService.getCurrentProviderUrl());
             statusLabel.setTextFill(Color.web("#4CAF50"));
         } else {
             statusLabel.setText("Disconnected");

@@ -23,9 +23,38 @@ public class OracleJmsService {
     private Session session;
     private boolean connected = false;
     private final List<JmsMessage> messageHistory = new ArrayList<>();
+    
+    // Current connection parameters (can be overridden)
+    private String currentProviderUrl;
+    private String currentConnectionFactory;
+    private String currentUser;
+    private String currentPassword;
 
     public OracleJmsService(OracleJmsConfig config) {
         this.config = config;
+        // Initialize with default config values
+        this.currentProviderUrl = config.getProviderUrl();
+        this.currentConnectionFactory = config.getConnectionFactory();
+        this.currentUser = config.getUser();
+        this.currentPassword = config.getPassword();
+    }
+    
+    /**
+     * Update connection parameters without connecting
+     */
+    public void updateConnectionParameters(String providerUrl, String connectionFactory, 
+                                           String username, String password) {
+        this.currentProviderUrl = providerUrl;
+        this.currentConnectionFactory = connectionFactory;
+        this.currentUser = username;
+        this.currentPassword = password;
+    }
+    
+    /**
+     * Get current provider URL
+     */
+    public String getCurrentProviderUrl() {
+        return currentProviderUrl;
     }
 
     /**
@@ -34,14 +63,57 @@ public class OracleJmsService {
     private InitialContext createJndiContext() throws NamingException {
         Hashtable<String, String> env = new Hashtable<>();
         env.put(Context.INITIAL_CONTEXT_FACTORY, "weblogic.jndi.WLInitialContextFactory");
-        env.put(Context.PROVIDER_URL, config.getProviderUrl());
+        env.put(Context.PROVIDER_URL, currentProviderUrl);
         
-        if (config.getUser() != null && !config.getUser().isEmpty()) {
-            env.put(Context.SECURITY_PRINCIPAL, config.getUser());
-            env.put(Context.SECURITY_CREDENTIALS, config.getPassword());
+        if (currentUser != null && !currentUser.isEmpty()) {
+            env.put(Context.SECURITY_PRINCIPAL, currentUser);
+            env.put(Context.SECURITY_CREDENTIALS, currentPassword);
         }
         
         return new InitialContext(env);
+    }
+    
+    /**
+     * Test connection with current parameters
+     */
+    public boolean testConnection() {
+        InitialContext ctx = null;
+        Connection testConnection = null;
+        try {
+            ctx = createJndiContext();
+            
+            // Look up connection factory
+            ConnectionFactory connectionFactory = (ConnectionFactory) ctx.lookup(currentConnectionFactory);
+            
+            // Create test connection
+            if (currentUser != null && !currentUser.isEmpty()) {
+                testConnection = connectionFactory.createConnection(currentUser, currentPassword);
+            } else {
+                testConnection = connectionFactory.createConnection();
+            }
+            
+            testConnection.start();
+            log.info("Connection test successful to {}", currentProviderUrl);
+            return true;
+        } catch (NamingException | JMSException e) {
+            log.error("Connection test failed", e);
+            return false;
+        } finally {
+            if (testConnection != null) {
+                try {
+                    testConnection.close();
+                } catch (JMSException e) {
+                    log.warn("Error closing test connection", e);
+                }
+            }
+            if (ctx != null) {
+                try {
+                    ctx.close();
+                } catch (NamingException e) {
+                    log.warn("Error closing test context", e);
+                }
+            }
+        }
     }
 
     public void connect() throws JMSException {
@@ -49,11 +121,11 @@ public class OracleJmsService {
             InitialContext ctx = createJndiContext();
             
             // Look up connection factory
-            ConnectionFactory connectionFactory = (ConnectionFactory) ctx.lookup(config.getConnectionFactory());
+            ConnectionFactory connectionFactory = (ConnectionFactory) ctx.lookup(currentConnectionFactory);
             
             // Create connection
-            if (config.getUser() != null && !config.getUser().isEmpty()) {
-                connection = connectionFactory.createConnection(config.getUser(), config.getPassword());
+            if (currentUser != null && !currentUser.isEmpty()) {
+                connection = connectionFactory.createConnection(currentUser, currentPassword);
             } else {
                 connection = connectionFactory.createConnection();
             }
@@ -62,7 +134,7 @@ public class OracleJmsService {
             connection.start();
             connected = true;
             
-            log.info("Connected to Oracle JMS at {}", config.getProviderUrl());
+            log.info("Connected to Oracle JMS at {}", currentProviderUrl);
             
             ctx.close();
         } catch (NamingException e) {

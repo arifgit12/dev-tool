@@ -75,9 +75,12 @@ public class MainStage {
         TabPane tabPane = new TabPane();
         tabPane.setStyle("-fx-background-color: #2b2b2b;");
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        tabPane.setTabMinHeight(40);
+        tabPane.setTabMaxHeight(40);
 
         // Tab 1: Configured Connection (from properties)
-        Tab configuredTab = new Tab("Configured Connection");
+        Tab configuredTab = new Tab("📋 Configured Connection");
+        configuredTab.setStyle("-fx-font-size: 13px; -fx-font-weight: bold;");
         BorderPane configuredContent = new BorderPane();
         configuredContent.setStyle("-fx-background-color: #2b2b2b;");
         
@@ -96,7 +99,8 @@ public class MainStage {
         configuredTab.setContent(configuredContent);
 
         // Tab 2: Dynamic Configuration
-        Tab dynamicTab = new Tab("Dynamic Configuration");
+        Tab dynamicTab = new Tab("🔧 Dynamic Configuration");
+        dynamicTab.setStyle("-fx-font-size: 13px; -fx-font-weight: bold;");
         BorderPane dynamicContent = createDynamicConfigurationTab();
         dynamicTab.setContent(dynamicContent);
 

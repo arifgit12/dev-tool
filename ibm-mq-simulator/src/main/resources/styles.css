@@ -5,6 +5,57 @@
     -fx-background: #2b2b2b;
 }
 
+/* Tab Pane Styling - Professional Look */
+.tab-pane {
+    -fx-background-color: #2b2b2b;
+    -fx-border-color: #3e3e3e;
+    -fx-border-width: 1px;
+}
+
+.tab-pane .tab-header-area {
+    -fx-background-color: #1e1e1e;
+    -fx-padding: 5 10 0 10;
+}
+
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-background-color: #1e1e1e;
+}
+
+.tab-pane .tab {
+    -fx-background-color: #3e3e3e;
+    -fx-background-radius: 5 5 0 0;
+    -fx-border-color: #555555;
+    -fx-border-width: 1 1 0 1;
+    -fx-border-radius: 5 5 0 0;
+    -fx-padding: 8 20 8 20;
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: #2b2b2b;
+    -fx-border-color: #4CAF50;
+    -fx-border-width: 2 2 0 2;
+}
+
+.tab-pane .tab:hover {
+    -fx-background-color: #4e4e4e;
+}
+
+.tab-pane .tab .tab-label {
+    -fx-text-fill: #b0b0b0;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.tab-pane .tab:selected .tab-label {
+    -fx-text-fill: #4CAF50;
+}
+
+.tab-pane .tab-content-area {
+    -fx-background-color: #2b2b2b;
+    -fx-border-color: #3e3e3e;
+    -fx-border-width: 1 1 1 1;
+}
+
 .text-area {
     -fx-font-family: "Courier New", monospace;
     -fx-font-size: 12px;

@@ -339,5 +339,9 @@ For issues or questions:
 - netstat -an | findstr "7001 7101"
 - netstat -an | grep "7001 7101"
 - mvn clean package
+- mvn clean package -DskipTests
+- mvn clean package -Pweblogic-thin-client -DskipTests
+- java -jar .\target\oracle-jms-simulator-1.0.0.jar
 - mvn spring-boot:run -Dspring-boot.run.mainClass=com.oraclejms.JmsConnectionTester
 - java -cp target/oracle-jms-simulator-1.0.0.jar com.oraclejms.JmsConnectionTester
+- Support JDK 8 and 11

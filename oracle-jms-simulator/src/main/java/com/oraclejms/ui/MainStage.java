@@ -230,8 +230,15 @@ public class MainStage {
         
         // Update parameters temporarily for testing
         jmsService.updateConnectionParameters(providerUrl, connectionFactory, username, password);
-        
-        new Thread(() -> {
+
+        Thread testThread = new Thread(() -> {
+            // Set context classloader to ensure WebLogic classes can be loaded
+            Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
+
+            // Set WebLogic client properties for better compatibility
+            System.setProperty("weblogic.MaxMessageSize", "100000000");
+            System.setProperty("weblogic.transaction.EnableInstrumentation", "false");
+
             boolean success = jmsService.testConnection();
             Platform.runLater(() -> {
                 if (success) {
@@ -250,7 +257,8 @@ public class MainStage {
                         Alert.AlertType.ERROR);
                 }
             });
-        }).start();
+        });
+        testThread.start();
     }
 
     private void addConnectionField(GridPane grid, int row, String labelText, String value) {
@@ -495,7 +503,9 @@ public class MainStage {
     }
 
     private void connectToJms() {
-        new Thread(() -> {
+        Thread connectThread = new Thread(() -> {
+            // Set context classloader to ensure WebLogic classes can be loaded
+            Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
             try {
                 jmsService.connect();
                 Platform.runLater(() -> {
@@ -504,10 +514,11 @@ public class MainStage {
                 });
             } catch (JMSException e) {
                 log.error("Connection failed", e);
-                Platform.runLater(() -> 
+                Platform.runLater(() ->
                     showAlert("Connection Error", "Failed to connect: " + e.getMessage(), Alert.AlertType.ERROR));
             }
-        }).start();
+        });
+        connectThread.start();
     }
 
     private void disconnectFromJms() {

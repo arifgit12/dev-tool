@@ -111,7 +111,7 @@
                     <artifactId>wlfullclient</artifactId>
                     <version>1.0</version>
                     <scope>system</scope>
-                    <systemPath>${project.basedir}/lib/wlfullclient.jar</systemPath>
+                    <systemPath>${project.basedir}/lib/wlthint3client.jar</systemPath>
                 </dependency>
             </dependencies>
         </profile>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<notification>
+    <messageId>MSG-98765</messageId>
+    <timestamp>2024-12-23T15:45:30</timestamp>
+    <type>email</type>
+    <priority>high</priority>
+    <sender>
+        <name>System Administrator</name>
+        <email>admin@example.com</email>
+    </sender>
+    <recipients>
+        <recipient>
+            <name>Jane Smith</name>
+            <email>jane.smith@example.com</email>
+            <type>primary</type>
+        </recipient>
+        <recipient>
+            <name>Bob Johnson</name>
+            <email>bob.johnson@example.com</email>
+            <type>cc</type>
+        </recipient>
+    </recipients>
+    <subject>Important System Update</subject>
+    <message>
+        <![CDATA[
+        Dear User,
+        
+        This is an important notification regarding the upcoming system maintenance.
+        The maintenance window is scheduled for December 25, 2024, from 00:00 to 04:00 EST.
+        
+        During this time, the following services will be unavailable:
+        - User portal
+        - API endpoints
+        - Mobile application
+        
+        Please plan accordingly and save your work before the maintenance window.
+        
+        Thank you for your understanding.
+        
+        Best regards,
+        System Administration Team
+        ]]>
+    </message>
+    <attachments>
+        <attachment>
+            <filename>maintenance-schedule.pdf</filename>
+            <mimeType>application/pdf</mimeType>
+            <size>245678</size>
+        </attachment>
+    </attachments>
+    <metadata>
+        <createdBy>system</createdBy>
+        <createdAt>2024-12-23T15:40:00</createdAt>
+        <category>maintenance</category>
+        <tags>
+            <tag>urgent</tag>
+            <tag>maintenance</tag>
+            <tag>downtime</tag>
+        </tags>
+    </metadata>
+</notification>

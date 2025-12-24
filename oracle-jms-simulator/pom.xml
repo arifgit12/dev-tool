@@ -96,6 +96,46 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <!-- Profile to include WebLogic Full Client if present in lib/ -->
+        <profile>
+            <id>weblogic-full-client</id>
+            <activation>
+                <file>
+                    <exists>${project.basedir}/lib/wlfullclient.jar</exists>
+                </file>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.oracle.weblogic</groupId>
+                    <artifactId>wlfullclient</artifactId>
+                    <version>1.0</version>
+                    <scope>system</scope>
+                    <systemPath>${project.basedir}/lib/wlfullclient.jar</systemPath>
+                </dependency>
+            </dependencies>
+        </profile>
+        
+        <!-- Profile to include WebLogic Thin Client if present in lib/ -->
+        <profile>
+            <id>weblogic-thin-client</id>
+            <activation>
+                <file>
+                    <exists>${project.basedir}/lib/wlthint3client.jar</exists>
+                </file>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.oracle.weblogic</groupId>
+                    <artifactId>wlthint3client</artifactId>
+                    <version>1.0</version>
+                    <scope>system</scope>
+                    <systemPath>${project.basedir}/lib/wlthint3client.jar</systemPath>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+
     <build>
         <plugins>
             <plugin>
@@ -103,6 +143,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>com.oraclejms.OracleJmsSimulatorApplication</mainClass>
+                    <includeSystemScope>true</includeSystemScope>
                     <requiresUnpack>
                         <dependency>
                             <groupId>org.openjfx</groupId>

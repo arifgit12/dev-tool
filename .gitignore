@@ -24,6 +24,10 @@ buildNumber.properties
 *.war
 *.ear
 
+# WebLogic Client Libraries (proprietary, must be obtained from Oracle)
+oracle-jms-simulator/lib/wlfullclient.jar
+oracle-jms-simulator/lib/wlthint3client.jar
+
 # Logs
 *.log
 

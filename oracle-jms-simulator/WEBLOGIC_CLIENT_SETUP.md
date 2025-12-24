@@ -1,6 +1,6 @@
 # WebLogic Client Setup Guide
 
-This guide provides detailed instructions for installing the Oracle WebLogic client library required by the Oracle JMS Simulator.
+This guide provides detailed instructions for setting up the Oracle WebLogic client library required by the Oracle JMS Simulator.
 
 ## Why is this needed?
 
@@ -8,17 +8,15 @@ The Oracle JMS Simulator connects to Oracle WebLogic JMS servers using the WebLo
 
 Oracle does not publish the WebLogic client JAR to public Maven repositories due to licensing restrictions. You must obtain it from your WebLogic Server installation.
 
-## Prerequisites
+## Quick Setup (Recommended)
 
-- Oracle WebLogic Server installed (any version: 12.2.1, 14.1.1, etc.)
-- Maven 3.6+ installed
-- Access to the WebLogic installation directory
+This is the easiest method - just place the JAR file in the `lib` directory and build.
 
-## Option 1: Full Client (wlfullclient.jar) - Recommended
+### Step 1: Obtain the WebLogic Client JAR
 
-The full client includes all WebLogic client classes and is the most compatible option.
+Choose one of the following options:
 
-### Step 1: Generate wlfullclient.jar
+#### Option A: Full Client (wlfullclient.jar) - Recommended
 
 1. Open a terminal/command prompt
 2. Navigate to your WebLogic Server installation:
@@ -36,48 +34,42 @@ The full client includes all WebLogic client classes and is the most compatible 
 
 4. This creates `wlfullclient.jar` in the same directory (typically 70-100 MB)
 
-### Step 2: Install to Local Maven Repository
-
-Install the generated JAR to your local Maven repository:
-
-```bash
-mvn install:install-file \
-  -Dfile=wlfullclient.jar \
-  -DgroupId=com.oracle.weblogic \
-  -DartifactId=wlfullclient \
-  -Dversion=14.1.1.0 \
-  -Dpackaging=jar
-```
-
-**Important:** Replace `14.1.1.0` with your actual WebLogic version:
-- WebLogic 12.2.1.x → use `12.2.1.4`
-- WebLogic 14.1.1.x → use `14.1.1.0`
-- Check your version: `cd $WL_HOME && cat registry.xml | grep "component name=\"WebLogic Server\""`
-
-### Step 3: Add Dependency to pom.xml
-
-Edit `oracle-jms-simulator/pom.xml` and add the following dependency after the H2 dependency:
-
-```xml
-<!-- Oracle WebLogic Client -->
-<dependency>
-    <groupId>com.oracle.weblogic</groupId>
-    <artifactId>wlfullclient</artifactId>
-    <version>14.1.1.0</version>
-</dependency>
-```
-
-Replace `14.1.1.0` with the version you used in Step 2.
-
-## Option 2: Thin Client (wlthint3client.jar) - Lightweight
-
-The thin client is smaller (5-10 MB) and suitable for most use cases.
-
-### Step 1: Locate wlthint3client.jar
+#### Option B: Thin Client (wlthint3client.jar) - Lightweight
 
 The thin client is pre-built and located at:
 ```bash
 $WL_HOME/server/lib/wlthint3client.jar
+```
+This is a smaller file (5-10 MB) and suitable for most use cases.
+
+### Step 2: Copy JAR to lib Directory
+
+Copy the WebLogic client JAR to the `lib` directory in the Oracle JMS Simulator project:
+
+```bash
+# For full client:
+cp $WL_HOME/server/lib/wlfullclient.jar /path/to/oracle-jms-simulator/lib/
+
+# OR for thin client:
+cp $WL_HOME/server/lib/wlthint3client.jar /path/to/oracle-jms-simulator/lib/
+```
+
+**Important:** The file must be named exactly:
+- `wlfullclient.jar` OR
+- `wlthint3client.jar`
+
+### Step 3: Build the Application
+
+```bash
+cd oracle-jms-simulator
+mvn clean package
+```
+
+**That's it!** The build process automatically includes the JAR from the `lib` directory, and it will be bundled with the final application.
+
+## Alternative Method: Maven Local Repository
+
+If you prefer the traditional Maven approach instead of using the `lib` directory:
 ```
 
 ### Step 2: Install to Local Maven Repository
